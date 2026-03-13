@@ -55,7 +55,7 @@ export default async function handler(req: any, res: any) {
 
             RULES:
             - Do NOT just copy the raw text. Summarize and restructure it.
-            - Wrap ALL key terms, names, definitions in <b> bold tags. Be generous.
+            - Wrap ALL key terms, names, definitions in <b class="theme-highlight"> bold tags. Be generous.
             - Use strictly HTML. Do NOT use Markdown. Do NOT use inline styles.
             - Keep the section headers exactly as shown (with the emoji).
             

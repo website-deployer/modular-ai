@@ -36,7 +36,7 @@ export default async function handler(req: any, res: any) {
         <h2>⚡ Quick Review</h2>
         <ul><li>[Takeaway bullet]</li></ul>
 
-        3. Wrap ALL key terms in <b> bold tags (they become theme-colored highlights).
+        3. Wrap ALL key terms in <b class="theme-highlight"> bold tags (they become theme-colored highlights).
         4. **Transcript**: Extract raw text for searchability.
         5. Use strictly HTML in content. No Markdown, no inline styles.
 

@@ -1,15 +1,22 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Noto Sans", sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Noto Sans", sans-serif;
+}
 
 :root {
   --theme-color: #c4f20d;
 }
 
-[contenteditable] b {
-  color: var(--theme-color);
+/* Scoped Highlight for AI generated terms */
+.theme-highlight {
+  color: var(--theme-color) !important;
+  font-weight: 700;
 }
 
+/* Scrollbar and Animations */
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
 }
