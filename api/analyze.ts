@@ -37,21 +37,24 @@ export default async function handler(req: any, res: any) {
         USER'S NOTES CORPUS:
         ${corpusContext}
 
-        WIDGET FORMATS (Use these for high-fidelity interactive sections):
-        1. **Flashcards**: <<<FLASHCARD:{"front": "Concept Name", "back": "Definition"}>>>
-        2. **Quiz Set**: <<<QUIZ_SET:{"title": "Quiz Title", "questions": [{"question": "?", "options": ["A", "B"], "answer": "B"}]}>>>
-        3. **Timeline**: <<<TIMELINE:{"date": "Time", "description": "Event"}>>>
-        4. **Action Items**: <<<ACTION_ITEM:{"task": "Task", "assignee": "Person"}>>>
-        5. **Key Takeaways**: <<<TAKEAWAY:{"title": "Point", "description": "Details"}>>>
-        6. **Comparison**: <<<COMPARISON:{"title": "A vs B", "left": {"name": "A", "points": ["P1", "P2"]}, "right": {"name": "B", "points": ["P1", "P2"]}}>>>
-        7. **Statistic**: <<<STAT:{"value": "95%", "label": "Retention", "detail": "Trend: Upward"}>>>
-        8. **Chat**: Use standard Markdown (###, **, *) + <b class="theme-highlight">highlights.
+        WIDGET FORMATS (Use These EXACT structures):
+        1. **Flashcards**: <<<FLASHCARD:{"front": "...", "back": "..."}>>>
+        2. **Quiz Set**: <<<QUIZ_SET:{"title": "...", "questions": [{"question": "...", "options": ["A", "B"], "answer": "B"}]}>>>
+        3. **Timeline**: <<<TIMELINE:{"date": "...", "description": "..."}>>>
+        4. **Action Items**: <<<ACTION_ITEM:{"task": "...", "assignee": "..."}>>>
+        5. **Key Takeaways**: <<<TAKEAWAY:{"title": "...", "description": "..."}>>>
+        6. **Comparison**: <<<COMPARISON:{"title": "...", "left": {"name": "...", "points": ["..."]}, "right": {"name": "...", "points": ["..."]}}>>>
+        7. **Statistic**: <<<STAT:{"value": "...", "label": "...", "detail": "..."}>>>
+
+        EXAMPLE OF A PERFECT QUIZ_SET:
+        <<<QUIZ_SET:{"title": "Neuroscience Basics", "questions": [{"question": "What is a neuron?", "options": ["A cell", "A bone"], "answer": "A cell"}]}>>>
 
         CRITICAL RULES:
-        - NEVER return a quiz or timeline as a Markdown list. ALWAYS use the special <<<WIDGET:{}>>> format.
-        - If the user asks for a quiz, generate a QUIZ_SET with 3-5 questions.
-        - Always synthesize information STRICTLY from the notes.
-        - When synthesizing, mix these formats. Use COMPARISON for contrasts, STAT for data, and QUIZ_SET for knowledge checks.`;
+        - NEVER omit the prefix (e.g., QUIZ_SET:).
+        - NEVER return a quiz/timeline as a Markdown list.
+        - ALWAYS start with <<< and end with >>>.
+        - If generating multiple questions, they MUST be inside a single QUIZ_SET array.
+        - Use <b class="theme-highlight"> for key terms in the "Chat" sections.`;
 
         const totalChars = corpusContext.length + (query || "").length + (history || []).reduce((acc: number, h: any) => acc + h.text.length, 0);
 

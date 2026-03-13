@@ -138,59 +138,41 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
     };
 
     const renderMessageContent = (text: string) => {
-        // Extract widgets
-        const flashcardRegex = /<<<FLASHCARD:(.*?)>>>/g;
-        const quizRegex = /<<<QUIZ:(.*?)>>>/g;
-        const quizSetRegex = /<<<QUIZ_SET:(.*?)>>>/g;
-        const timelineRegex = /<<<TIMELINE:(.*?)>>>/g;
-        const actionItemRegex = /<<<ACTION_ITEM:(.*?)>>>/g;
-        const takeawayRegex = /<<<TAKEAWAY:(.*?)>>>/g;
+        // More resilient Regex: Handles missing characters, extra spaces, or varied brackets
+        const flashcardRegex = /<{1,3}FLASHCARD:?\s*(.*?)\s*>{1,3}/g;
+        const quizSetRegex = /<{1,3}QUIZ_SET:?\s*(.*?)\s*>{1,3}/g;
+        const quizRegex = /<{1,3}QUIZ:?\s*(.*?)\s*>{1,3}/g;
+        const timelineRegex = /<{1,3}TIMELINE:?\s*(.*?)\s*>{1,3}/g;
+        const actionItemRegex = /<{1,3}ACTION_ITEM:?\s*(.*?)\s*>{1,3}/g;
+        const takeawayRegex = /<{1,3}TAKEAWAY:?\s*(.*?)\s*>{1,3}/g;
+        const comparisonRegex = /<{1,3}COMPARISON:?\s*(.*?)\s*>{1,3}/g;
+        const statRegex = /<{1,3}STAT:?\s*(.*?)\s*>{1,3}/g;
+
+        // Special case for when the AI JUST returns a raw JSON array or object without a prefix
+        const rawJsonRegex = /^\[\s*\{\s*"question":.*\}\s*\]$/gs;
 
         const widgets: React.ReactNode[] = [];
         let cleanText = text;
 
-        // Extract and replace widgets with placeholders to keep text clean
         const processWidget = (regex: RegExp, type: string) => {
             let match;
             while ((match = regex.exec(text)) !== null) {
                 try {
-                    const data = JSON.parse(match[1]);
+                    let jsonStr = match[1].trim();
+                    // Basic cleanup if the AI returned a trailing comma or similar
+                    if (jsonStr.endsWith(',')) jsonStr = jsonStr.slice(0, -1);
+                    
+                    const data = JSON.parse(jsonStr);
                     widgets.push(
                         <div key={`${type}-${widgets.length}`} className="my-6">
-                            {type === 'FLASHCARD' && (
-                                <div className="bg-white dark:bg-zinc-900 border border-[var(--theme-color)]/30 rounded-2xl p-6 shadow-xl relative overflow-hidden group/card max-w-sm mx-auto cursor-pointer transition-transform hover:scale-[1.02]">
-                                    <div className="absolute top-0 right-0 p-2 bg-[var(--theme-color)]/10 rounded-bl-xl text-[10px] font-bold text-[var(--theme-color)] uppercase tracking-tighter">Flashcard</div>
-                                    <h4 className="text-xs uppercase tracking-widest text-slate-400 mb-2">Concept</h4>
-                                    <p className="text-lg font-bold text-slate-800 dark:text-white mb-4">{data.front}</p>
-                                    <div className="h-[1px] w-12 bg-[var(--theme-color)] mb-4"></div>
-                                    <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed italic">{data.back}</p>
-                                </div>
-                            )}
-                            {type === 'QUIZ' && (
-                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-lg max-w-md">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <span className="material-symbols-outlined text-[var(--theme-color)] text-xl">quiz</span>
-                                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Knowledge Check</span>
-                                    </div>
-                                    <p className="text-sm font-bold text-slate-800 dark:text-white mb-4">{data.question}</p>
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {data.options.map((opt: string, i: number) => (
-                                            <button key={i} className="text-left px-4 py-3 rounded-xl border border-slate-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-xs text-slate-600 dark:text-neutral-400">
-                                                <span className="inline-block w-6 font-bold text-[var(--theme-color)]">{String.fromCharCode(65 + i)}.</span> {opt}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {type === 'QUIZ_SET' && (
-                                <div className="bg-white dark:bg-zinc-900 border border-[var(--theme-color)]/20 rounded-3xl p-8 shadow-2xl max-w-2xl mx-auto overflow-hidden relative">
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--theme-color)] to-transparent opacity-50"></div>
+                            {(type === 'QUIZ_SET' || (type === 'QUIZ' && Array.isArray(data))) && (
+                                <div className="bg-white dark:bg-zinc-900 border border-[var(--theme-color)]/20 rounded-3xl p-8 shadow-2xl max-w-2xl mx-auto overflow-hidden relative border-t-4 border-t-[var(--theme-color)]">
                                     <div className="flex items-center justify-between mb-8">
                                         <div>
-                                            <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none">{data.title || "Interactive Quiz"}</h4>
+                                            <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none">{data.title || "Interactive Assessment"}</h4>
                                             <p className="text-xs text-slate-400 mt-2 font-medium uppercase tracking-widest italic opacity-60 flex items-center gap-2">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-color)] animate-pulse"></span>
-                                                Assessing {data.questions.length} Concepts
+                                                {Array.isArray(data.questions) ? data.questions.length : (Array.isArray(data) ? data.length : 1)} Concepts Covered
                                             </p>
                                         </div>
                                         <div className="w-12 h-12 rounded-2xl bg-[var(--theme-color)]/10 flex items-center justify-center">
@@ -198,7 +180,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                         </div>
                                     </div>
                                     <div className="space-y-8">
-                                        {data.questions.map((q: any, qi: number) => (
+                                        {(data.questions || (Array.isArray(data) ? data : [])).map((q: any, qi: number) => (
                                             <div key={qi} className="group/q border-b border-black/5 dark:border-white/5 last:border-0 pb-8 last:pb-0">
                                                 <div className="flex gap-4 mb-4">
                                                     <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-black/5 dark:bg-white/5 text-[10px] font-black text-slate-400 shrink-0">0{qi + 1}</span>
@@ -223,26 +205,79 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                     </div>
                                 </div>
                             )}
+                            {type === 'FLASHCARD' && (
+                                <div className="bg-white dark:bg-zinc-900 border-t-4 border-[var(--theme-color)] rounded-2xl p-6 shadow-xl relative overflow-hidden group/card max-w-sm mx-auto cursor-pointer transition-transform hover:scale-[1.02]">
+                                    <div className="absolute top-0 right-0 p-2 bg-[var(--theme-color)]/10 rounded-bl-xl text-[10px] font-bold text-[var(--theme-color)] uppercase tracking-tighter">Flashcard</div>
+                                    <h4 className="text-xs uppercase tracking-widest text-slate-400 mb-2">Concept</h4>
+                                    <p className="text-lg font-bold text-slate-800 dark:text-white mb-4">{data.front}</p>
+                                    <div className="h-[1px] w-12 bg-[var(--theme-color)] mb-4"></div>
+                                    <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed italic">{data.back}</p>
+                                </div>
+                            )}
                             {type === 'TIMELINE' && (
-                                <div className="flex gap-4 items-start max-w-md">
+                                <div className="flex gap-4 items-start max-w-md bg-white dark:bg-zinc-900/40 p-5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm">
                                     <div className="flex flex-col items-center gap-1 mt-1">
                                         <div className="w-3 h-3 rounded-full bg-[var(--theme-color)] shadow-[0_0_10px_var(--theme-color)]"></div>
                                         <div className="w-[1px] h-12 bg-gradient-to-b from-[var(--theme-color)] to-transparent"></div>
                                     </div>
                                     <div>
                                         <span className="text-[10px] font-black uppercase text-[var(--theme-color)] tracking-tighter">{data.date}</span>
-                                        <p className="text-xs text-slate-700 dark:text-neutral-300 font-medium mt-1">{data.description}</p>
+                                        <p className="text-xs text-slate-700 dark:text-neutral-300 font-medium mt-1 leading-relaxed">{data.description}</p>
                                     </div>
                                 </div>
                             )}
+                            {type === 'COMPARISON' && (
+                                <div className="bg-white dark:bg-zinc-900/50 border-t-4 border-[var(--theme-color)] rounded-2xl overflow-hidden shadow-2xl max-w-2xl mx-auto border-x border-b border-black/5 dark:border-white/5">
+                                    <div className="bg-slate-50 dark:bg-white/5 px-6 py-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-neutral-400">{data.title || "Side-by-Side Comparison"}</h4>
+                                        <span className="material-symbols-outlined text-[var(--theme-color)] text-lg">compare_arrows</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-white/10">
+                                        <div className="p-6">
+                                            <h5 className="text-sm font-bold text-[var(--theme-color)] mb-4 flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-color)]"></span>
+                                                {data.left.name}
+                                            </h5>
+                                            <ul className="space-y-3">
+                                                {data.left.points.map((p: string, i: number) => (
+                                                    <li key={i} className="text-[11px] text-slate-600 dark:text-neutral-400 flex gap-2 leading-relaxed">
+                                                        <span className="text-[var(--theme-color)] shrink-0 opacity-50">✦</span> {p}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <div className="p-6">
+                                            <h5 className="text-sm font-bold text-sky-400 mb-4 flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                                                {data.right.name}
+                                            </h5>
+                                            <ul className="space-y-3">
+                                                {data.right.points.map((p: string, i: number) => (
+                                                    <li key={i} className="text-[11px] text-slate-600 dark:text-neutral-400 flex gap-2 leading-relaxed">
+                                                        <span className="text-sky-400 shrink-0 opacity-50">✦</span> {p}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {type === 'STAT' && (
+                                <div className="inline-flex flex-col bg-[var(--theme-color)] text-black p-5 rounded-2xl shadow-xl shadow-[var(--theme-color)]/20 min-w-[160px] relative overflow-hidden group">
+                                    <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
+                                    <span className="text-[10px] uppercase font-black tracking-widest opacity-60 z-10">{data.label}</span>
+                                    <span className="text-4xl font-black my-1 tracking-tighter z-10">{data.value}</span>
+                                    {data.detail && <span className="text-[9px] font-bold opacity-70 tracking-tight z-10">{data.detail}</span>}
+                                </div>
+                            )}
                             {type === 'ACTION_ITEM' && (
-                                <div className="flex items-center gap-3 bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-transparent hover:border-[var(--theme-color)]/30 transition-all">
-                                    <button className="w-5 h-5 rounded-md border-2 border-[var(--theme-color)]/50 flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-[14px] text-[var(--theme-color)] opacity-0 hover:opacity-100 transition-opacity">check</span>
+                                <div className="flex items-center gap-4 bg-white dark:bg-white/5 p-4 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm hover:border-[var(--theme-color)]/50 transition-all group max-w-md">
+                                    <button className="w-6 h-6 rounded-lg border-2 border-[var(--theme-color)]/50 flex items-center justify-center group-hover:bg-[var(--theme-color)] group-hover:border-transparent transition-all">
+                                        <span className="material-symbols-outlined text-[16px] text-[var(--theme-color)] group-hover:text-black opacity-0 group-hover:opacity-100 transition-all">check</span>
                                     </button>
                                     <div className="flex-1">
-                                        <p className="text-xs text-slate-700 dark:text-neutral-200 font-medium">{data.task}</p>
-                                        {data.assignee && <span className="text-[9px] text-slate-400 uppercase font-bold">Assigned to: {data.assignee}</span>}
+                                        <p className="text-[13px] text-slate-700 dark:text-neutral-200 font-bold leading-tight">{data.task}</p>
+                                        {data.assignee && <span className="text-[9px] text-[var(--theme-color)] uppercase font-black tracking-widest mt-1 block opacity-70">Assignee: {data.assignee}</span>}
                                     </div>
                                 </div>
                             )}
@@ -255,42 +290,6 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                     <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">{data.description}</p>
                                 </div>
                             )}
-                            {type === 'COMPARISON' && (
-                                <div className="bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-xl max-w-2xl mx-auto">
-                                    <div className="bg-slate-50 dark:bg-white/5 px-6 py-3 border-b border-slate-200 dark:border-white/10">
-                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-neutral-400">{data.title || "Side-by-Side Comparison"}</h4>
-                                    </div>
-                                    <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-white/10">
-                                        <div className="p-6">
-                                            <h5 className="text-sm font-bold text-[var(--theme-color)] mb-4">{data.left.name}</h5>
-                                            <ul className="space-y-2">
-                                                {data.left.points.map((p: string, i: number) => (
-                                                    <li key={i} className="text-[11px] text-slate-600 dark:text-neutral-400 flex gap-2">
-                                                        <span className="text-[var(--theme-color)]">•</span> {p}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                        <div className="p-6">
-                                            <h5 className="text-sm font-bold text-sky-400 mb-4">{data.right.name}</h5>
-                                            <ul className="space-y-2">
-                                                {data.right.points.map((p: string, i: number) => (
-                                                    <li key={i} className="text-[11px] text-slate-600 dark:text-neutral-400 flex gap-2">
-                                                        <span className="text-sky-400">•</span> {p}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            {type === 'STAT' && (
-                                <div className="inline-flex flex-col bg-[var(--theme-color)] text-black p-4 rounded-2xl shadow-lg shadow-[var(--theme-color)]/20 min-w-[140px]">
-                                    <span className="text-[10px] uppercase font-black tracking-widest opacity-60">{data.label}</span>
-                                    <span className="text-3xl font-black my-1">{data.value}</span>
-                                    {data.detail && <span className="text-[9px] font-bold opacity-70 tracking-tight">{data.detail}</span>}
-                                </div>
-                            )}
                         </div>
                     );
                 } catch (e) {
@@ -301,13 +300,68 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
         };
 
         processWidget(flashcardRegex, 'FLASHCARD');
-        processWidget(quizRegex, 'QUIZ');
         processWidget(quizSetRegex, 'QUIZ_SET');
+        processWidget(quizRegex, 'QUIZ');
         processWidget(timelineRegex, 'TIMELINE');
         processWidget(actionItemRegex, 'ACTION_ITEM');
         processWidget(takeawayRegex, 'TAKEAWAY');
-        processWidget(/<<<COMPARISON:(.*?)>>>/g, 'COMPARISON');
-        processWidget(/<<<STAT:(.*?)>>>/g, 'STAT');
+        processWidget(comparisonRegex, 'COMPARISON');
+        processWidget(statRegex, 'STAT');
+
+        // Raw JSON discovery fallback (if no widgets were found but text looks like JSON)
+        if (widgets.length === 0 && (cleanText.trim().startsWith('[') || cleanText.trim().startsWith('{'))) {
+            try {
+                const data = JSON.parse(cleanText.trim());
+                if (Array.isArray(data) || data.questions) {
+                    // It's a quiz!
+                    widgets.push(
+                        <div key="quiz-fallback" className="my-6">
+                            <div className="bg-white dark:bg-zinc-900 border-t-4 border-[var(--theme-color)] rounded-3xl p-8 shadow-2xl max-w-2xl mx-auto overflow-hidden relative">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none">{data.title || "Interactive Assessment"}</h4>
+                                        <p className="text-xs text-slate-400 mt-2 font-medium uppercase tracking-widest italic opacity-60 flex items-center gap-2">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-color)] animate-pulse"></span>
+                                            {Array.isArray(data.questions) ? data.questions.length : (Array.isArray(data) ? data.length : 1)} Concepts Covered
+                                        </p>
+                                    </div>
+                                    <div className="w-12 h-12 rounded-2xl bg-[var(--theme-color)]/10 flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-[var(--theme-color)] text-2xl">school</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-8">
+                                    {(data.questions || (Array.isArray(data) ? data : [])).map((q: any, qi: number) => (
+                                        <div key={qi} className="group/q border-b border-black/5 dark:border-white/5 last:border-0 pb-8 last:pb-0">
+                                            <div className="flex gap-4 mb-4">
+                                                <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-black/5 dark:bg-white/5 text-[10px] font-black text-slate-400 shrink-0">0{qi + 1}</span>
+                                                <p className="text-sm font-bold text-slate-800 dark:text-white leading-relaxed">{q.question}</p>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-10">
+                                                {q.options.map((opt: string, i: number) => (
+                                                    <button key={i} className="group/opt text-left px-4 py-3 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/2 hover:border-[var(--theme-color)]/50 hover:bg-[var(--theme-color)]/5 transition-all outline-none">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="w-6 h-6 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center text-[10px] font-bold text-slate-400 group-hover/opt:border-[var(--theme-color)] group-hover/opt:text-[var(--theme-color)]">{String.fromCharCode(65 + i)}</span>
+                                                            <span className="text-xs text-slate-600 dark:text-neutral-400 font-medium">{opt}</span>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-10 p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-dashed border-black/10 dark:border-white/10 flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-500 font-medium">Click an option to check your knowledge.</span>
+                                    <button className="bg-[var(--theme-color)] text-black px-6 py-2 rounded-xl font-black text-[11px] uppercase tracking-tighter hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-[var(--theme-color)]/20">Submit Answers</button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                    cleanText = ""; // Clear text since it was just the JSON
+                }
+            } catch (e) {
+                // Not valid JSON or not a quiz, ignore
+            }
+        }
 
         // Robust Ad-hoc Markdown Rendering
         const htmlContent = cleanText
