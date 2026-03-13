@@ -4,6 +4,8 @@ import { generateGlobalAnalysis } from '../services/aiService';
 
 interface AnalysisViewProps {
     notes: Note[];
+    contextualAttachments?: string[];
+    setContextualAttachments?: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 interface FlashcardData {
@@ -259,7 +261,7 @@ const TakeawaysWidget: React.FC<{ takeaways: TakeawayData[] }> = ({ takeaways })
     );
 };
 
-const AnalysisView: React.FC<AnalysisViewProps> = ({ notes }) => {
+const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachments = [], setContextualAttachments }) => {
     const [query, setQuery] = useState("");
     const [messages, setMessages] = useState<ChatMessage[]>([
         {
@@ -335,16 +337,30 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes }) => {
     };
 
     const handleSend = async () => {
-        if (!query.trim()) return;
+        if (!query.trim() && contextualAttachments.length === 0) return;
 
-        const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: query, timestamp: new Date() };
+        let finalQuery = query;
+        
+        // Prepend attachments if any exist
+        if (contextualAttachments.length > 0) {
+            const attachmentsBlock = contextualAttachments.map(text => `> ${text}`).join('\n>\n');
+            finalQuery = `${attachmentsBlock}\n\n${query}`.trim();
+        }
+
+        const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: finalQuery, timestamp: new Date() };
         setMessages(prev => [...prev, userMsg]);
         setQuery("");
+        
+        // Clear global attachments
+        if (setContextualAttachments) {
+            setContextualAttachments([]);
+        }
+
         setLoading(true);
 
         const responseText = await generateGlobalAnalysis(
             notes,
-            query,
+            finalQuery,
             messages.map(m => ({ role: m.role, text: m.text }))
         );
 
@@ -429,7 +445,24 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes }) => {
                 </div>
 
                 {/* Input Area */}
-                <div className="mt-4 relative z-20">
+                <div className="mt-4 relative z-20 flex flex-col gap-2">
+                    {contextualAttachments && contextualAttachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
+                            {contextualAttachments.map((text, idx) => (
+                                <div key={idx} className="bg-[var(--theme-color)]/20 border border-[var(--theme-color)] text-slate-800 dark:text-neutral-200 text-xs px-3 py-2 rounded-lg flex items-start gap-2 max-w-full shadow-sm">
+                                    <span className="material-symbols-outlined text-[14px] text-[var(--theme-color)] mt-0.5 shrink-0">format_quote</span>
+                                    <div className="truncate flex-1 max-w-[300px]" title={text}>{text}</div>
+                                    <button 
+                                        onClick={() => setContextualAttachments && setContextualAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                        className="shrink-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-1 transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-[14px]">close</span>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="relative group shadow-2xl rounded-2xl">
                         <div className="absolute inset-0 bg-gradient-to-r from-[var(--theme-color)]/20 to-[var(--theme-color)]/5 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
                         <input

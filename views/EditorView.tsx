@@ -7,9 +7,11 @@ interface EditorViewProps {
   onBack: () => void;
   onUpdate: (note: Note) => void;
   onToggleBookmark: (note: Note) => void;
+  contextualAttachments: string[];
+  setContextualAttachments: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const EditorView: React.FC<EditorViewProps> = ({ note, onBack, onUpdate, onToggleBookmark }) => {
+const EditorView: React.FC<EditorViewProps> = ({ note, onBack, onUpdate, onToggleBookmark, contextualAttachments, setContextualAttachments }) => {
   const [content, setContent] = useState(note.content);
   const [title, setTitle] = useState(note.title);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -260,7 +262,11 @@ const EditorView: React.FC<EditorViewProps> = ({ note, onBack, onUpdate, onToggl
             </div>
           </div>
           
-          <ChatInterface context={note.transcript || note.content} />
+          <ChatInterface 
+              context={note.transcript || note.content} 
+              contextualAttachments={contextualAttachments}
+              setContextualAttachments={setContextualAttachments}
+          />
         </div>
       </div>
 
@@ -279,7 +285,11 @@ const EditorView: React.FC<EditorViewProps> = ({ note, onBack, onUpdate, onToggl
                       <span className="material-symbols-outlined text-slate-900 dark:text-white">close</span>
                   </button>
               </div>
-              <ChatInterface context={note.transcript || note.content} />
+              <ChatInterface 
+                  context={note.transcript || note.content} 
+                  contextualAttachments={contextualAttachments}
+                  setContextualAttachments={setContextualAttachments}
+              />
           </div>
       )}
 

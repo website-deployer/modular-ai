@@ -4,6 +4,8 @@ import { ChatMessage } from '../types';
 
 interface ChatInterfaceProps {
     context: string;
+    contextualAttachments?: string[];
+    setContextualAttachments?: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 // Simple markdown parser for bold, italic, lists, code
@@ -52,7 +54,7 @@ const renderMarkdown = (text: string) => {
     return { __html: html };
 };
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ context }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ context, contextualAttachments = [], setContextualAttachments }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -78,17 +80,31 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ context }) => {
     }, [messages, loading]);
 
     const handleSend = async () => {
-        if (!input.trim()) return;
+        if (!input.trim() && contextualAttachments.length === 0) return;
 
-        const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: input, timestamp: new Date() };
+        let finalInput = input;
+        
+        // Prepend attachments if any exist
+        if (contextualAttachments.length > 0) {
+            const attachmentsBlock = contextualAttachments.map(text => `> ${text}`).join('\n>\n');
+            finalInput = `${attachmentsBlock}\n\n${input}`.trim();
+        }
+
+        const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: finalInput, timestamp: new Date() };
         setMessages(prev => [...prev, userMsg]);
         setInput("");
+        
+        // Clear global attachments
+        if (setContextualAttachments) {
+            setContextualAttachments([]);
+        }
+
         setLoading(true);
 
         const responseText = await generateChatResponse(
             messages.map(m => ({ role: m.role, text: m.text })),
             context,
-            input
+            finalInput
         );
 
         setLoading(false);
@@ -142,7 +158,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ context }) => {
             </div>
 
             {/* Input Area - Fixed at Bottom */}
-            <div className="p-3 border-t border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-sm">
+            <div className="p-3 border-t border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-sm flex flex-col gap-2">
+                {contextualAttachments && contextualAttachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
+                        {contextualAttachments.map((text, idx) => (
+                            <div key={idx} className="bg-[var(--theme-color)]/20 border border-[var(--theme-color)] text-slate-800 dark:text-neutral-200 text-[10px] px-2 py-1.5 rounded-md flex items-start gap-2 max-w-full">
+                                <span className="material-symbols-outlined text-[12px] text-[var(--theme-color)] mt-0.5 shrink-0">format_quote</span>
+                                <div className="truncate flex-1 max-w-[200px]" title={text}>{text}</div>
+                                <button 
+                                    onClick={() => setContextualAttachments && setContextualAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                    className="shrink-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-[12px]">close</span>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                
                 <div className="relative group">
                     <input
                         className="w-full bg-white dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2.5 pr-10 text-xs text-slate-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:border-[var(--theme-color)]/50 focus:ring-1 focus:ring-[var(--theme-color)]/50 transition-all shadow-inner font-body"

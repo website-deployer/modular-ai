@@ -281,11 +281,15 @@ const RecorderView: React.FC<RecorderViewProps> = ({ onSaveSession, onCancel, au
 
     if (isProcessing) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-[#050505] text-white">
-                <div className="w-12 h-12 border-4 border-[var(--theme-color)] border-t-transparent rounded-full animate-spin mb-4"></div>
-                <h2 className="text-xl font-bold font-display">Synthesizing Notes...</h2>
-                <p className="text-neutral-400">Gemini is structuring your session.</p>
-            </div>
+            <main className="flex-1 flex flex-col min-w-0 relative bg-white dark:bg-[#050505]">
+                {/* Fixed Overlay Blocker */}
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white animate-in fade-in duration-200">
+                    <div className="w-12 h-12 border-4 border-[var(--theme-color)] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <h2 className="text-xl font-bold font-display">Synthesizing Notes...</h2>
+                    <p className="text-neutral-400">Gemini is structuring your session.</p>
+                </div>
+                {/* Fallback empty view behind blocker so layout doesn't completely break visually */}
+            </main>
         )
     }
 

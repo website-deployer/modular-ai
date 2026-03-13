@@ -26,6 +26,43 @@ const App: React.FC = () => {
   const [notes, setNotesState] = useState<Note[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Global Contextual Assistant State
+  const [contextualAttachments, setContextualAttachments] = useState<string[]>([]);
+  const [selectionData, setSelectionData] = useState<{ text: string, x: number, y: number } | null>(null);
+
+  // Track text selection globally
+  useEffect(() => {
+      const handleSelectionChange = () => {
+          const selection = document.getSelection();
+          if (selection && selection.toString().trim().length > 0) {
+              const range = selection.getRangeAt(0);
+              const rect = range.getBoundingClientRect();
+              
+              // Position the button slightly above and centered on the selection
+              setSelectionData({
+                  text: selection.toString().trim(),
+                  x: rect.left + (rect.width / 2) - 50, // rough center minus half button width
+                  y: rect.top - 40 // above the selection
+              });
+          } else {
+              setSelectionData(null);
+          }
+      };
+
+      document.addEventListener('selectionchange', handleSelectionChange);
+      return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, []);
+
+  const handleAddToChat = () => {
+      if (selectionData) {
+          setContextualAttachments(prev => [...prev, selectionData.text]);
+          // Clear selection so the button disappears
+          const selection = window.getSelection();
+          if (selection) selection.removeAllRanges();
+          setSelectionData(null);
+      }
+  };
+
   const refreshNotes = async () => {
       const storedNotes = await getAllNotes();
       setNotesState(storedNotes);
@@ -209,7 +246,7 @@ const App: React.FC = () => {
             />
         );
       case View.ANALYSIS:
-         return <AnalysisView notes={notes} />;
+         return <AnalysisView notes={notes} contextualAttachments={contextualAttachments} setContextualAttachments={setContextualAttachments} />;
       case View.RECORDER:
         return (
             <RecorderView 
@@ -228,6 +265,8 @@ const App: React.FC = () => {
                 onBack={() => setCurrentView(View.LIBRARY)}
                 onUpdate={handleSaveNote}
                 onToggleBookmark={handleToggleBookmark}
+                contextualAttachments={contextualAttachments}
+                setContextualAttachments={setContextualAttachments}
             />
         ) : <LibraryView notes={notes} onOpenNote={handleOpenNote} onNavigate={handleNavigate} onImport={() => {}} onDeleteNote={handleDeleteNote} />;
       case View.SETTINGS:
@@ -265,6 +304,26 @@ const App: React.FC = () => {
             setShowQuotaModal(false);
         }}
       />
+
+      {/* Global Contextual Text Selector */}
+      {selectionData && (currentView === View.EDITOR || currentView === View.ANALYSIS) && (
+          <div 
+              className="fixed z-[100] animate-in slide-in-from-bottom-2 fade-in duration-200"
+              style={{ left: selectionData.x, top: selectionData.y }}
+          >
+              <button
+                  onMouseDown={(e) => {
+                      // Prevent selection from clearing when clicking the button
+                      e.preventDefault();
+                      handleAddToChat();
+                  }}
+                  className="bg-[var(--theme-color)] text-black px-3 py-1.5 rounded-lg shadow-xl font-bold text-xs flex items-center gap-1 hover:scale-105 active:scale-95 transition-all border border-black/10"
+              >
+                  <span className="material-symbols-outlined text-[14px]">add_circle</span>
+                  Add to Chat
+              </button>
+          </div>
+      )}
     </div>
   );
 };

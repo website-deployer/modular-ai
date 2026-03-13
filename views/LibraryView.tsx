@@ -214,7 +214,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ notes = [], onOpenNote, onNav
     return (
         <main className="flex-1 flex flex-col min-w-0 relative overflow-hidden bg-[#f4f4f5] dark:bg-[#09090b]">
             {uploadStatus !== 'idle' && uploadStatus !== 'error' && (
-                <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
                     <div className="bg-[#18181b] p-8 rounded-2xl border border-[var(--theme-color)]/30 flex flex-col items-center shadow-2xl max-w-sm w-full text-center">
                         {uploadStatus === 'reading' && (
                             <>
