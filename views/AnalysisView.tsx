@@ -8,6 +8,121 @@ interface AnalysisViewProps {
     setContextualAttachments?: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
+const QuizSetWidget: React.FC<{ data: any }> = ({ data }) => {
+    const questions = data.questions || (Array.isArray(data) ? data : []);
+    const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+    const [showResults, setShowResults] = useState(false);
+
+    const handleSelect = (qIdx: number, oIdx: number) => {
+        if (showResults) return;
+        setSelectedAnswers(prev => ({ ...prev, [qIdx]: oIdx }));
+    };
+
+    return (
+        <div className="bg-white dark:bg-zinc-900 border-t-8 border-t-[var(--theme-color)] rounded-3xl p-8 shadow-2xl max-w-2xl mx-auto overflow-hidden relative border border-black/5 dark:border-white/5">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none">{data.title || "Interactive Assessment"}</h4>
+                    <p className="text-xs text-slate-400 mt-2 font-medium uppercase tracking-widest italic opacity-60 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-color)] animate-pulse"></span>
+                        {questions.length} Concepts Covered
+                    </p>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-[var(--theme-color)]/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[var(--theme-color)] text-2xl">school</span>
+                </div>
+            </div>
+            <div className="space-y-10">
+                {questions.map((q: any, qi: number) => {
+                    const isCorrect = selectedAnswers[qi] !== undefined && q.options[selectedAnswers[qi]] === q.answer;
+                    return (
+                        <div key={qi} className="group/q border-b border-black/5 dark:border-white/5 last:border-0 pb-10 last:pb-0">
+                            <div className="flex gap-4 mb-6">
+                                <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-black/5 dark:bg-white/5 text-[10px] font-black text-slate-400 shrink-0">0{qi + 1}</span>
+                                <p className="text-base font-bold text-slate-800 dark:text-white leading-relaxed" dangerouslySetInnerHTML={{ __html: q.question }} />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-10">
+                                {q.options?.map((opt: string, i: number) => {
+                                    const isSelected = selectedAnswers[qi] === i;
+                                    const isOptionCorrect = opt === q.answer;
+                                    
+                                    let btnClass = "group/opt text-left px-5 py-4 rounded-2xl border transition-all outline-none active:scale-[0.98] relative overflow-hidden ";
+                                    if (showResults) {
+                                        if (isOptionCorrect) btnClass += "border-emerald-500/50 bg-emerald-500/10 dark:bg-emerald-500/5 ";
+                                        else if (isSelected && !isOptionCorrect) btnClass += "border-rose-500/50 bg-rose-500/10 dark:bg-rose-500/5 ";
+                                        else btnClass += "border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/2 opacity-50 ";
+                                    } else {
+                                        if (isSelected) btnClass += "border-[var(--theme-color)] bg-[var(--theme-color)]/10 ";
+                                        else btnClass += "border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/2 hover:border-[var(--theme-color)]/50 hover:bg-[var(--theme-color)]/5 ";
+                                    }
+
+                                    return (
+                                        <button key={i} onClick={() => handleSelect(qi, i)} className={btnClass}>
+                                            <div className="flex items-center gap-4 relative z-10">
+                                                <span className={`w-7 h-7 rounded-full border flex items-center justify-center text-[10px] font-bold transition-colors ${isSelected ? 'bg-[var(--theme-color)] border-transparent text-black' : 'border-slate-200 dark:border-white/10 text-slate-400 group-hover/opt:border-[var(--theme-color)] group-hover/opt:text-[var(--theme-color)]'}`}>
+                                                    {String.fromCharCode(65 + i)}
+                                                </span>
+                                                <span className="text-sm text-slate-600 dark:text-neutral-300 font-medium" dangerouslySetInnerHTML={{ __html: opt }} />
+                                            </div>
+                                            {showResults && isOptionCorrect && (
+                                                <div className="absolute top-0 right-0 p-2">
+                                                    <span className="material-symbols-outlined text-emerald-500 text-sm">check_circle</span>
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            <div className="mt-12 p-5 rounded-3xl bg-black/5 dark:bg-white/5 border border-dashed border-black/10 dark:border-white/10 flex items-center justify-between">
+                <div className="flex flex-col">
+                    <span className="text-xs font-bold text-slate-800 dark:text-white">Ready to check?</span>
+                    <span className="text-[10px] text-slate-500 font-medium">{Object.keys(selectedAnswers).length} of {questions.length} answered</span>
+                </div>
+                <button 
+                    onClick={() => setShowResults(true)}
+                    disabled={showResults || Object.keys(selectedAnswers).length === 0}
+                    className={`px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-tighter transition-all shadow-xl ${showResults ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-[var(--theme-color)] text-black hover:scale-105 active:scale-95 shadow-[var(--theme-color)]/20'}`}
+                >
+                    {showResults ? 'Assessment Complete' : 'Submit Answers'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const FlashcardWidget: React.FC<{ data: any }> = ({ data }) => {
+    const [flipped, setFlipped] = useState(false);
+    return (
+        <div 
+            onClick={() => setFlipped(!flipped)}
+            className="group/card max-w-sm mx-auto cursor-pointer perspective-1000 h-64"
+        >
+            <div className={`relative w-full h-full transition-all duration-500 transform-style-3d ${flipped ? 'rotate-y-180' : ''}`}>
+                {/* Front */}
+                <div className="absolute inset-0 backface-hidden bg-white dark:bg-zinc-900 border-t-4 border-[var(--theme-color)] rounded-3xl p-8 shadow-2xl flex flex-col justify-center border border-black/5 dark:border-white/5">
+                    <div className="absolute top-0 right-0 p-3 bg-[var(--theme-color)]/10 rounded-bl-2xl text-[10px] font-bold text-[var(--theme-color)] uppercase tracking-tighter">Front</div>
+                    <h4 className="text-[10px] uppercase tracking-widest text-slate-400 mb-4 font-black">Concept</h4>
+                    <p className="text-xl font-black text-slate-800 dark:text-white leading-tight" dangerouslySetInnerHTML={{ __html: data.front }} />
+                    <div className="mt-auto flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest italic opacity-50">
+                        <span className="animate-bounce material-symbols-outlined text-sm">touch_app</span>
+                        Click to Reveal
+                    </div>
+                </div>
+                {/* Back */}
+                <div className="absolute inset-0 backface-hidden bg-zinc-900 border-t-4 border-sky-400 rounded-3xl p-8 shadow-2xl flex flex-col justify-center rotate-y-180 border border-white/5">
+                    <div className="absolute top-0 right-0 p-3 bg-sky-400/10 rounded-bl-2xl text-[10px] font-bold text-sky-400 uppercase tracking-tighter">Answer</div>
+                    <h4 className="text-[10px] uppercase tracking-widest text-slate-400 mb-4 font-black">Definition</h4>
+                    <p className="text-lg font-bold text-neutral-300 leading-relaxed italic" dangerouslySetInnerHTML={{ __html: data.back }} />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachments = [], setContextualAttachments }) => {
     const [query, setQuery] = useState("");
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -228,63 +343,13 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                             .replace(/>{1,3}/g, "");
 
         function renderWidget(type: string, data: any) {
-            // Normalize Quiz Data
-            const normalizedQuiz = (type === 'QUIZ_SET' || type === 'QUIZ') ? (data.questions || (Array.isArray(data) ? data : (data.title ? [] : [data]))) : [];
-
             switch (type.toUpperCase()) {
                 case 'QUIZ_SET':
                 case 'QUIZ':
-                    return (
-                        <div className="bg-white dark:bg-zinc-900 border-t-8 border-t-[var(--theme-color)] rounded-3xl p-8 shadow-2xl max-w-2xl mx-auto overflow-hidden relative border border-black/5 dark:border-white/5">
-                            <div className="flex items-center justify-between mb-8">
-                                <div>
-                                    <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none">{data.title || "Interactive Assessment"}</h4>
-                                    <p className="text-xs text-slate-400 mt-2 font-medium uppercase tracking-widest italic opacity-60 flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-color)] animate-pulse"></span>
-                                        {normalizedQuiz.length} Concepts Covered
-                                    </p>
-                                </div>
-                                <div className="w-12 h-12 rounded-2xl bg-[var(--theme-color)]/10 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-[var(--theme-color)] text-2xl">school</span>
-                                </div>
-                            </div>
-                            <div className="space-y-8">
-                                {normalizedQuiz.map((q: any, qi: number) => (
-                                    <div key={qi} className="group/q border-b border-black/5 dark:border-white/5 last:border-0 pb-8 last:pb-0">
-                                        <div className="flex gap-4 mb-4">
-                                            <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-black/5 dark:bg-white/5 text-[10px] font-black text-slate-400 shrink-0">0{qi + 1}</span>
-                                            <p className="text-sm font-bold text-slate-800 dark:text-white leading-relaxed">{q.question}</p>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-10">
-                                            {q.options?.map((opt: string, i: number) => (
-                                                <button key={i} className="group/opt text-left px-4 py-3 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/2 hover:border-[var(--theme-color)]/50 hover:bg-[var(--theme-color)]/5 transition-all outline-none">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="w-6 h-6 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center text-[10px] font-bold text-slate-400 group-hover/opt:border-[var(--theme-color)] group-hover/opt:text-[var(--theme-color)]">{String.fromCharCode(65 + i)}</span>
-                                                        <span className="text-xs text-slate-600 dark:text-neutral-400 font-medium">{opt}</span>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="mt-10 p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-dashed border-black/10 dark:border-white/10 flex items-center justify-between">
-                                <span className="text-[10px] text-slate-500 font-medium">Click an option to check your knowledge.</span>
-                                <button className="bg-[var(--theme-color)] text-black px-6 py-2 rounded-xl font-black text-[11px] uppercase tracking-tighter hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-[var(--theme-color)]/20">Submit Answers</button>
-                            </div>
-                        </div>
-                    );
+                    return <QuizSetWidget data={data} />;
 
                 case 'FLASHCARD':
-                    return (
-                        <div className="bg-white dark:bg-zinc-900 border-t-4 border-[var(--theme-color)] rounded-2xl p-6 shadow-xl relative overflow-hidden group/card max-w-sm mx-auto cursor-pointer transition-transform hover:scale-[1.02] border border-black/5 dark:border-white/5">
-                            <div className="absolute top-0 right-0 p-2 bg-[var(--theme-color)]/10 rounded-bl-xl text-[10px] font-bold text-[var(--theme-color)] uppercase tracking-tighter">Flashcard</div>
-                            <h4 className="text-xs uppercase tracking-widest text-slate-400 mb-2">Concept</h4>
-                            <p className="text-lg font-bold text-slate-800 dark:text-white mb-4">{data.front}</p>
-                            <div className="h-[1px] w-12 bg-[var(--theme-color)] mb-4"></div>
-                            <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed italic">{data.back}</p>
-                        </div>
-                    );
+                    return <FlashcardWidget data={data} />;
 
                 case 'TIMELINE':
                     return (
@@ -295,7 +360,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                             </div>
                             <div className="flex-1">
                                 <span className="px-2 py-0.5 rounded-md bg-[var(--theme-color)]/10 text-[10px] font-black uppercase text-[var(--theme-color)] tracking-tighter border border-[var(--theme-color)]/20">{data.date}</span>
-                                <p className="text-[13px] text-slate-700 dark:text-neutral-300 font-semibold mt-3 leading-relaxed">{data.description}</p>
+                                <p className="text-[13px] text-slate-700 dark:text-neutral-300 font-semibold mt-3 leading-relaxed" dangerouslySetInnerHTML={{ __html: data.description }} />
                             </div>
                         </div>
                     );
@@ -316,7 +381,8 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                     <ul className="space-y-4">
                                         {data.left?.points?.map((p: string, i: number) => (
                                             <li key={i} className="text-[11px] text-slate-600 dark:text-neutral-400 flex gap-3 leading-relaxed">
-                                                <span className="text-[var(--theme-color)] shrink-0 opacity-50">✦</span> {p}
+                                                <span className="text-[var(--theme-color)] shrink-0 opacity-50">✦</span>
+                                                <span dangerouslySetInnerHTML={{ __html: p }} />
                                             </li>
                                         ))}
                                     </ul>
@@ -329,7 +395,8 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                     <ul className="space-y-4">
                                         {data.right?.points?.map((p: string, i: number) => (
                                             <li key={i} className="text-[11px] text-slate-600 dark:text-neutral-400 flex gap-3 leading-relaxed">
-                                                <span className="text-sky-400 shrink-0 opacity-50">✦</span> {p}
+                                                <span className="text-sky-400 shrink-0 opacity-50">✦</span>
+                                                <span dangerouslySetInnerHTML={{ __html: p }} />
                                             </li>
                                         ))}
                                     </ul>
@@ -355,7 +422,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                 <span className="material-symbols-outlined text-[18px] text-[var(--theme-color)] group-hover:text-black opacity-0 group-hover:opacity-100 transition-all font-black">check</span>
                             </button>
                             <div className="flex-1">
-                                <p className="text-[14px] text-slate-700 dark:text-neutral-200 font-bold leading-tight">{data.task}</p>
+                                <p className="text-[14px] text-slate-700 dark:text-neutral-200 font-bold leading-tight" dangerouslySetInnerHTML={{ __html: data.task }} />
                                 {data.assignee && <span className="text-[10px] text-[var(--theme-color)] uppercase font-black tracking-widest mt-2 block opacity-70 border-t border-black/5 pt-1 w-fit">Assignee: {data.assignee}</span>}
                             </div>
                         </div>
@@ -370,7 +437,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                 </div>
                                 <h4 className="text-[13px] font-black uppercase tracking-tight text-slate-800 dark:text-white leading-none">{data.title}</h4>
                             </div>
-                            <p className="text-[13px] text-slate-600 dark:text-neutral-400 leading-relaxed font-medium">{data.description}</p>
+                            <p className="text-[13px] text-slate-600 dark:text-neutral-400 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: data.description }} />
                         </div>
                     );
 
