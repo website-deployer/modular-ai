@@ -1,17 +1,6 @@
 @import "tailwindcss";
-@config "./tailwind.config.js";
 
-:root {
-  --theme-color: #c4f20d;
-}
-
-/* Scoped Highlight for AI generated terms */
-.theme-highlight {
-  color: var(--theme-color) !important;
-  font-weight: 700;
-}
-
-/* Scrollbar and Animations */
+/* Global Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
 }
@@ -26,10 +15,17 @@
     background: rgba(255, 255, 255, 0.2);
 }
 
+/* Animations */
 @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
 }
 .cursor-blink {
     animation: blink 1s step-end infinite;
+}
+
+/* Theme Highlights (scoped as needed) */
+.theme-highlight {
+    color: var(--theme-color) !important;
+    font-weight: 700;
 }
