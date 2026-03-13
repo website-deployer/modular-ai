@@ -26,12 +26,38 @@ export default async function handler(req: any, res: any) {
             const prompt = `
             You are an expert note-taker. Transform the following raw text/transcript into a high-quality, structured study guide.
             
-            CRITICAL INSTRUCTIONS:
-            1. **Do NOT just copy the text.** You must summarize and organize it.
-            2. **Structure**: Start with a brief <b>Executive Summary</b>. Use <h2> headers, <ul> lists.
-            3. **HIGHLIGHTS**: Wrap ALL key terms, important concepts, definitions, names, and notable phrases in <b> bold tags. This is extremely important — by wrapping key terms in <b> tags they will be visually highlighted in the user's chosen accent color. Be generous with highlights.
-            4. **Format**: Use strictly HTML. Do NOT use Markdown. Do NOT use inline styles.
-            5. Use <blockquote> for important quotes or takeaways.
+            YOU MUST follow this EXACT HTML template structure. Do not deviate:
+
+            <blockquote><b>Executive Summary</b>: [2-3 sentence overview of the entire content]</blockquote>
+
+            <h2>🔑 Key Concepts</h2>
+            <ul>
+            <li><b>[Term 1]</b> — [Brief definition or explanation]</li>
+            <li><b>[Term 2]</b> — [Brief definition or explanation]</li>
+            [... more as needed]
+            </ul>
+
+            <h2>📝 Detailed Notes</h2>
+            [Structured paragraphs with <b>bold highlights</b> on important phrases. Use <h3> sub-headers if multiple topics exist. Be thorough but concise.]
+
+            <h2>✅ Action Items</h2>
+            <ul>
+            <li>[ ] [Actionable task derived from the content]</li>
+            [... more as needed, or write "No action items identified." if none]
+            </ul>
+
+            <h2>⚡ Quick Review</h2>
+            <ul>
+            <li>[One-line bullet summary point 1]</li>
+            <li>[One-line bullet summary point 2]</li>
+            [... 3-6 key takeaways]
+            </ul>
+
+            RULES:
+            - Do NOT just copy the raw text. Summarize and restructure it.
+            - Wrap ALL key terms, names, definitions in <b> bold tags. Be generous.
+            - Use strictly HTML. Do NOT use Markdown. Do NOT use inline styles.
+            - Keep the section headers exactly as shown (with the emoji).
             
             Raw Text:
             ${(transcript || "").slice(0, 100000)}

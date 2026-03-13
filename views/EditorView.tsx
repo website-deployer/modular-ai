@@ -81,8 +81,8 @@ const EditorView: React.FC<EditorViewProps> = ({ note, onBack, onUpdate, onToggl
   useEffect(() => {
       const handleMouseMove = (e: MouseEvent) => {
           if (!isDragging || !containerRef.current) return;
-          const containerWidth = containerRef.current.getBoundingClientRect().width;
-          const newAssistantWidth = ((containerWidth - e.clientX) / containerWidth) * 100;
+          const containerRect = containerRef.current.getBoundingClientRect();
+          const newAssistantWidth = ((containerRect.right - e.clientX) / containerRect.width) * 100;
           
           // Limit between 20% and 50%
           if (newAssistantWidth >= 20 && newAssistantWidth <= 50) {

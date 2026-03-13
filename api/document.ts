@@ -20,14 +20,25 @@ export default async function handler(req: any, res: any) {
         const modelId = "gemini-2.5-flash";
 
         const prompt = `
-        Analyze the provided document (slides or text) and create a structured study guide.
+        Analyze the provided document and create a structured study guide.
         
         CRITICAL INSTRUCTIONS:
         1. **Title**: Generate a concise, descriptive title.
-        2. **Content**: Create a detailed, structured HTML summary. Use <h2> for sections, <ul> for lists, <blockquote> for key quotes.
-        3. **HIGHLIGHTS**: Wrap ALL key terms, important concepts, definitions, names, and notable phrases in <b> bold tags. This is extremely important — by wrapping key terms in <b> tags they appear highlighted in the user's chosen accent color. Be generous with highlights.
-        4. **Transcript**: Extract the raw text for searchability. Limit to most important text if very long.
-        5. Do NOT use Markdown. Use strictly HTML. Do NOT use inline styles.
+        2. **Content**: Create HTML following this EXACT template:
+
+        <blockquote><b>Executive Summary</b>: [2-3 sentence overview]</blockquote>
+        <h2>🔑 Key Concepts</h2>
+        <ul><li><b>[Term]</b> — [Definition]</li></ul>
+        <h2>📝 Detailed Notes</h2>
+        [Paragraphs with <b>bold highlights</b> on key terms. Use <h3> for sub-topics.]
+        <h2>✅ Action Items</h2>
+        <ul><li>[ ] [Task]</li></ul>
+        <h2>⚡ Quick Review</h2>
+        <ul><li>[Takeaway bullet]</li></ul>
+
+        3. Wrap ALL key terms in <b> bold tags (they become theme-colored highlights).
+        4. **Transcript**: Extract raw text for searchability.
+        5. Use strictly HTML in content. No Markdown, no inline styles.
 
         Output format (JSON): { "title": "Title Here", "content": "HTML Here", "transcript": "Raw Text Here" }
         `;

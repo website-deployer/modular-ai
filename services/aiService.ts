@@ -102,6 +102,42 @@ export const generateGlobalAnalysis = async (notes: Note[], query: string, histo
     }
 };
 
+// 4.5 Analysis Session Management
+export const getAnalysisSessions = async (): Promise<any[]> => {
+    const res = await fetch('/api/sessions');
+    if (!res.ok) throw new Error("Failed to load sessions");
+    return await res.json();
+};
+
+export const loadAnalysisSession = async (id: string): Promise<any> => {
+    const res = await fetch('/api/sessions', {
+        method: 'PUT', // Using PUT for fetching by ID in this implementation
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (!res.ok) throw new Error("Failed to load session content");
+    return await res.json();
+};
+
+export const saveAnalysisSession = async (session: { id?: string, title: string, messages: any[] }): Promise<any> => {
+    const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(session)
+    });
+    if (!res.ok) throw new Error("Failed to save session");
+    return await res.json();
+};
+
+export const deleteAnalysisSession = async (id: string): Promise<void> => {
+    const res = await fetch('/api/sessions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    if (!res.ok) throw new Error("Failed to delete session");
+};
+
 
 // 5. Audio Helpers
 export const downsampleTo16k = (buffer: Float32Array, inputSampleRate: number): Float32Array => {
