@@ -29,50 +29,109 @@ export const initDB = async (): Promise<void> => {
     await openDB();
 };
 
+// Cloud Sync Helpers
+const syncNoteToCloud = async (note: Note) => {
+    try {
+        await fetch('/api/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(note)
+        });
+    } catch (err) {
+        console.error("Cloud sync failed (save)", err);
+    }
+};
+
+const deleteNoteFromCloud = async (id: string) => {
+    try {
+        await fetch('/api/notes', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+    } catch (err) {
+        console.error("Cloud sync failed (delete)", err);
+    }
+};
+
 export const saveNote = async (note: Note): Promise<void> => {
     const db = await openDB();
-    return new Promise((resolve, reject) => {
+    // Save locally first
+    await new Promise<void>((resolve, reject) => {
         const transaction = db.transaction([NOTES_STORE], 'readwrite');
         const store = transaction.objectStore(NOTES_STORE);
         const request = store.put(note);
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
     });
+    // Sync to cloud in background
+    syncNoteToCloud(note);
 };
 
 export const deleteNote = async (id: string): Promise<void> => {
     const db = await openDB();
-    return new Promise((resolve, reject) => {
+    // Delete locally
+    await new Promise<void>((resolve, reject) => {
         const transaction = db.transaction([NOTES_STORE], 'readwrite');
         const store = transaction.objectStore(NOTES_STORE);
         const request = store.delete(id);
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
     });
+    // Sync to cloud in background
+    deleteNoteFromCloud(id);
 };
 
 export const getAllNotes = async (): Promise<Note[]> => {
     const db = await openDB();
-    return new Promise((resolve, reject) => {
+    const localNotes = await new Promise<Note[]>((resolve, reject) => {
         const transaction = db.transaction([NOTES_STORE], 'readonly');
         const store = transaction.objectStore(NOTES_STORE);
         const request = store.getAll();
-        request.onsuccess = () => {
-            // Sort by lastAccessed descending
-            const notes = (request.result as Note[]) || [];
-            if (notes && Array.isArray(notes)) {
-                notes.sort((a, b) => {
-                    const dateA = a.lastAccessed ? new Date(a.lastAccessed).getTime() : 0;
-                    const dateB = b.lastAccessed ? new Date(b.lastAccessed).getTime() : 0;
-                    return dateB - dateA;
-                });
-                resolve(notes);
-            } else {
-                resolve([]);
-            }
-        };
+        request.onsuccess = () => resolve((request.result as Note[]) || []);
         request.onerror = () => reject(request.error);
     });
+
+    // If local is empty, try to fetch from cloud (one-time sync)
+    if (localNotes.length === 0) {
+        try {
+            const res = await fetch('/api/notes');
+            if (res.ok) {
+                const cloudNotes = await res.json();
+                if (cloudNotes && cloudNotes.length > 0) {
+                    // Map back from snake_case to camelCase
+                    const mappedNotes: Note[] = cloudNotes.map((n: any) => ({
+                        ...n,
+                        isBookmarked: n.is_bookmarked,
+                        lastAccessed: n.last_accessed,
+                        sourceData: n.source_data
+                    }));
+                    
+                    // Save to local for next time
+                    for (const note of mappedNotes) {
+                        const transaction = db.transaction([NOTES_STORE], 'readwrite');
+                        transaction.objectStore(NOTES_STORE).put(note);
+                    }
+                    
+                    mappedNotes.sort((a, b) => {
+                        const dateA = a.lastAccessed ? new Date(a.lastAccessed).getTime() : 0;
+                        const dateB = b.lastAccessed ? new Date(b.lastAccessed).getTime() : 0;
+                        return dateB - dateA;
+                    });
+                    return mappedNotes;
+                }
+            }
+        } catch (err) {
+            console.error("Cloud fetch failed", err);
+        }
+    }
+
+    localNotes.sort((a, b) => {
+        const dateA = a.lastAccessed ? new Date(a.lastAccessed).getTime() : 0;
+        const dateB = b.lastAccessed ? new Date(b.lastAccessed).getTime() : 0;
+        return dateB - dateA;
+    });
+    return localNotes;
 };
 
 export const saveSettings = async (settings: AppSettings): Promise<void> => {
