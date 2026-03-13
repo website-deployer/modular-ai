@@ -308,20 +308,32 @@ const App: React.FC = () => {
       {/* Global Contextual Text Selector */}
       {selectionData && (currentView === View.EDITOR || currentView === View.ANALYSIS) && (
           <div 
-              className="fixed z-[100] animate-in slide-in-from-bottom-2 fade-in duration-200"
-              style={{ left: selectionData.x, top: selectionData.y }}
+              className="fixed z-[100] animate-in fade-in slide-in-from-bottom-1 duration-150"
+              style={{ 
+                  left: Math.max(8, Math.min(selectionData.x, window.innerWidth - 260)), 
+                  top: Math.max(8, selectionData.y) 
+              }}
           >
-              <button
-                  onMouseDown={(e) => {
-                      // Prevent selection from clearing when clicking the button
-                      e.preventDefault();
-                      handleAddToChat();
-                  }}
-                  className="bg-[var(--theme-color)] text-black px-3 py-1.5 rounded-lg shadow-xl font-bold text-xs flex items-center gap-1 hover:scale-105 active:scale-95 transition-all border border-black/10"
-              >
-                  <span className="material-symbols-outlined text-[14px]">add_circle</span>
-                  Add to Chat
-              </button>
+              <div className="bg-white/90 dark:bg-[#18181b]/90 backdrop-blur-xl rounded-xl shadow-2xl border border-black/10 dark:border-white/10 p-2 flex items-center gap-2 max-w-[250px]">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                      <span className="material-symbols-outlined text-[var(--theme-color)] text-sm shrink-0">format_quote</span>
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 truncate italic">
+                          "{selectionData.text.length > 40 ? selectionData.text.slice(0, 40) + '…' : selectionData.text}"
+                      </span>
+                  </div>
+                  <button
+                      onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleAddToChat();
+                      }}
+                      className="bg-[var(--theme-color)] text-black px-2.5 py-1 rounded-lg font-bold text-[10px] flex items-center gap-1 hover:brightness-110 active:scale-95 transition-all shrink-0 shadow-md shadow-[var(--theme-color)]/20 whitespace-nowrap"
+                  >
+                      <span className="material-symbols-outlined text-[12px]">add</span>
+                      Add
+                  </button>
+              </div>
+              {/* Arrow pointer */}
+              <div className="w-3 h-3 bg-white/90 dark:bg-[#18181b]/90 border-b border-r border-black/10 dark:border-white/10 rotate-45 mx-auto -mt-1.5 relative z-[-1]"></div>
           </div>
       )}
     </div>

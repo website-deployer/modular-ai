@@ -160,14 +160,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ context, contextualAttach
             {/* Input Area - Fixed at Bottom */}
             <div className="p-3 border-t border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-sm flex flex-col gap-2">
                 {contextualAttachments && contextualAttachments.length > 0 && (
-                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
+                    <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto custom-scrollbar">
                         {contextualAttachments.map((text, idx) => (
-                            <div key={idx} className="bg-[var(--theme-color)]/20 border border-[var(--theme-color)] text-slate-800 dark:text-neutral-200 text-[10px] px-2 py-1.5 rounded-md flex items-start gap-2 max-w-full">
-                                <span className="material-symbols-outlined text-[12px] text-[var(--theme-color)] mt-0.5 shrink-0">format_quote</span>
-                                <div className="truncate flex-1 max-w-[200px]" title={text}>{text}</div>
+                            <div key={idx} className="bg-white dark:bg-white/5 border-l-2 border-[var(--theme-color)] rounded-r-lg px-3 py-2 flex items-start gap-2 shadow-sm group/att">
+                                <span className="material-symbols-outlined text-[14px] text-[var(--theme-color)] mt-0.5 shrink-0">format_quote</span>
+                                <p className="text-[10px] text-slate-600 dark:text-neutral-300 flex-1 line-clamp-2 leading-relaxed italic" title={text}>"{text}"</p>
                                 <button 
                                     onClick={() => setContextualAttachments && setContextualAttachments(prev => prev.filter((_, i) => i !== idx))}
-                                    className="shrink-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors"
+                                    className="shrink-0 opacity-0 group-hover/att:opacity-100 hover:bg-red-500/10 text-red-500 rounded-full p-0.5 transition-all"
                                 >
                                     <span className="material-symbols-outlined text-[12px]">close</span>
                                 </button>

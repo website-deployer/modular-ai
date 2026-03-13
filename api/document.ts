@@ -24,8 +24,10 @@ export default async function handler(req: any, res: any) {
         
         CRITICAL INSTRUCTIONS:
         1. **Title**: Generate a concise, descriptive title.
-        2. **Content**: Create a detailed, structured HTML summary. 
-        3. **Transcript**: Extract the raw text for searchability. Limit to most important text if very long.
+        2. **Content**: Create a detailed, structured HTML summary. Use <h2> for sections, <ul> for lists, <blockquote> for key quotes.
+        3. **HIGHLIGHTS**: Wrap ALL key terms, important concepts, definitions, names, and notable phrases in <b> bold tags. This is extremely important — by wrapping key terms in <b> tags they appear highlighted in the user's chosen accent color. Be generous with highlights.
+        4. **Transcript**: Extract the raw text for searchability. Limit to most important text if very long.
+        5. Do NOT use Markdown. Use strictly HTML. Do NOT use inline styles.
 
         Output format (JSON): { "title": "Title Here", "content": "HTML Here", "transcript": "Raw Text Here" }
         `;

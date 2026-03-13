@@ -28,8 +28,10 @@ export default async function handler(req: any, res: any) {
             
             CRITICAL INSTRUCTIONS:
             1. **Do NOT just copy the text.** You must summarize and organize it.
-            2. **Structure**: Start with a brief <b>Executive Summary</b>. Use <h2> headers, <ul> lists. Highlight <b>Key Terms</b> and <b>Action Items</b>.
-            3. **Format**: Use strictly HTML. Do NOT use Markdown.
+            2. **Structure**: Start with a brief <b>Executive Summary</b>. Use <h2> headers, <ul> lists.
+            3. **HIGHLIGHTS**: Wrap ALL key terms, important concepts, definitions, names, and notable phrases in <b> bold tags. This is extremely important — by wrapping key terms in <b> tags they will be visually highlighted in the user's chosen accent color. Be generous with highlights.
+            4. **Format**: Use strictly HTML. Do NOT use Markdown. Do NOT use inline styles.
+            5. Use <blockquote> for important quotes or takeaways.
             
             Raw Text:
             ${(transcript || "").slice(0, 100000)}
