@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Analytics } from "@vercel/analytics/react";
 import Sidebar from './components/Sidebar';
 import LibraryView from './views/LibraryView';
 import RecorderView from './views/RecorderView';
@@ -336,6 +337,7 @@ const App: React.FC = () => {
               <div className="w-3 h-3 bg-white/90 dark:bg-[#18181b]/90 border-b border-r border-black/10 dark:border-white/10 rotate-45 mx-auto -mt-1.5 relative z-[-1]"></div>
           </div>
       )}
+      <Analytics />
     </div>
   );
 };
