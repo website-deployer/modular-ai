@@ -87,18 +87,47 @@ export const generateTitle = async (transcript: string): Promise<string> => {
 // 4. Global Corpus Analysis (Multi-Format Support)
 export const generateGlobalAnalysis = async (notes: Note[], query: string, history: { role: string; text: string }[]): Promise<string> => {
     try {
+        // Optimization: Strip large binary data (sourceData) and keep only essential context
+        // This prevents 413 (Payload Too Large) errors on Vercel's 4.5MB limit
+        const optimizedNotes = notes.map(n => ({
+            id: n.id,
+            title: n.title,
+            content: n.content,
+            transcript: n.transcript
+        }));
+
+        // Safety truncation: If total characters exceed ~4M (approx 4MB), 
+        // we truncate individual note contents proportionally to stay under the limit.
+        let totalLen = JSON.stringify(optimizedNotes).length + JSON.stringify(history).length + query.length;
+        const LIMIT = 4000000; // 4M characters
+
+        let finalNotes = optimizedNotes;
+        if (totalLen > LIMIT) {
+            console.warn(`Payload size (${totalLen}) exceeds safety limit. Truncating context.`);
+            // Sort by title/id to keep it stable, then truncate content/transcript if needed
+            finalNotes = optimizedNotes.map(n => ({
+                ...n,
+                content: n.content.slice(0, 50000), // Cap individual notes at 50k chars
+                transcript: n.transcript.slice(0, 50000)
+            }));
+        }
+
         const res = await fetch('/api/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ notes, query, history })
+            body: JSON.stringify({ notes: finalNotes, query, history })
         });
+
+        if (res.status === 413) {
+            throw new Error("The combined size of your notes is too large for the analyzer. Try deleting some unused recordings or long files.");
+        }
 
         if (!res.ok) throw new Error("Backend analysis failure");
         const data = await res.json();
         return data.content;
-    } catch (error) {
+    } catch (error: any) {
         console.error("Analysis Error:", error);
-        return "I am currently unable to access the global knowledge base.";
+        return error.message || "I am currently unable to access the global knowledge base.";
     }
 };
 
