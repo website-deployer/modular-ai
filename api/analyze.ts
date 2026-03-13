@@ -60,15 +60,17 @@ export default async function handler(req: any, res: any) {
 
         // Gemini Fallback
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const chat = await ai.chats.create({
-            model: "gemini-2.5-flash",
+        const promptWithContext = (history || []).map((h: any) => `${h.role === 'model' ? 'Assistant' : 'User'}: ${h.text}`).join('\n') + `\n\nUser: ${query}`;
+        
+        const response = await ai.models.generateContent({
+            model: "gemini-1.5-flash",
+            contents: [{ role: "user", parts: [{ text: promptWithContext }] }],
             config: {
                 systemInstruction: systemInstruction,
+                maxOutputTokens: 2000,
+                temperature: 0.7
             }
         });
-
-        const promptWithContext = (history || []).map((h: any) => `${h.role === 'model' ? 'Assistant' : 'User'}: ${h.text}`).join('\n') + `\n\nUser: ${query}`;
-        const response = await chat.sendMessage({ message: promptWithContext });
 
         return res.status(200).json({ content: response.text || "Unable to synthesize response." });
 

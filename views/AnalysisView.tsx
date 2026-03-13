@@ -133,6 +133,113 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
         }
     };
 
+    const renderMessageContent = (text: string) => {
+        // Extract widgets
+        const flashcardRegex = /<<<FLASHCARD:(.*?)>>>/g;
+        const quizRegex = /<<<QUIZ:(.*?)>>>/g;
+        const timelineRegex = /<<<TIMELINE:(.*?)>>>/g;
+        const actionItemRegex = /<<<ACTION_ITEM:(.*?)>>>/g;
+        const takeawayRegex = /<<<TAKEAWAY:(.*?)>>>/g;
+
+        const widgets: React.ReactNode[] = [];
+        let cleanText = text;
+
+        // Extract and replace widgets with placeholders to keep text clean
+        const processWidget = (regex: RegExp, type: string) => {
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                try {
+                    const data = JSON.parse(match[1]);
+                    widgets.push(
+                        <div key={`${type}-${widgets.length}`} className="my-4">
+                            {type === 'FLASHCARD' && (
+                                <div className="bg-white dark:bg-zinc-900 border border-[var(--theme-color)]/30 rounded-2xl p-6 shadow-xl relative overflow-hidden group/card max-w-sm mx-auto cursor-pointer transition-transform hover:scale-[1.02]">
+                                    <div className="absolute top-0 right-0 p-2 bg-[var(--theme-color)]/10 rounded-bl-xl text-[10px] font-bold text-[var(--theme-color)] uppercase tracking-tighter">Flashcard</div>
+                                    <h4 className="text-xs uppercase tracking-widest text-slate-400 mb-2">Concept</h4>
+                                    <p className="text-lg font-bold text-slate-800 dark:text-white mb-4">{data.front}</p>
+                                    <div className="h-[1px] w-12 bg-[var(--theme-color)] mb-4"></div>
+                                    <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed italic">{data.back}</p>
+                                </div>
+                            )}
+                            {type === 'QUIZ' && (
+                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-lg max-w-md">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="material-symbols-outlined text-[var(--theme-color)] text-xl">quiz</span>
+                                        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Knowledge Check</span>
+                                    </div>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white mb-4">{data.question}</p>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {data.options.map((opt: string, i: number) => (
+                                            <button key={i} className="text-left px-4 py-3 rounded-xl border border-slate-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-xs text-slate-600 dark:text-neutral-400">
+                                                <span className="inline-block w-6 font-bold text-[var(--theme-color)]">{String.fromCharCode(65 + i)}.</span> {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {type === 'TIMELINE' && (
+                                <div className="flex gap-4 items-start max-w-md">
+                                    <div className="flex flex-col items-center gap-1 mt-1">
+                                        <div className="w-3 h-3 rounded-full bg-[var(--theme-color)] shadow-[0_0_10px_var(--theme-color)]"></div>
+                                        <div className="w-[1px] h-12 bg-gradient-to-b from-[var(--theme-color)] to-transparent"></div>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] font-black uppercase text-[var(--theme-color)] tracking-tighter">{data.date}</span>
+                                        <p className="text-xs text-slate-700 dark:text-neutral-300 font-medium mt-1">{data.description}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {type === 'ACTION_ITEM' && (
+                                <div className="flex items-center gap-3 bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-transparent hover:border-[var(--theme-color)]/30 transition-all">
+                                    <button className="w-5 h-5 rounded-md border-2 border-[var(--theme-color)]/50 flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-[14px] text-[var(--theme-color)] opacity-0 hover:opacity-100 transition-opacity">check</span>
+                                    </button>
+                                    <div className="flex-1">
+                                        <p className="text-xs text-slate-700 dark:text-neutral-200 font-medium">{data.task}</p>
+                                        {data.assignee && <span className="text-[9px] text-slate-400 uppercase font-bold">Assigned to: {data.assignee}</span>}
+                                    </div>
+                                </div>
+                            )}
+                            {type === 'TAKEAWAY' && (
+                                <div className="p-4 rounded-2xl bg-gradient-to-br from-white to-slate-50 dark:from-white/5 dark:to-transparent border border-black/5 dark:border-white/5 shadow-sm">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="material-symbols-outlined text-[var(--theme-color)] text-lg">lightbulb</span>
+                                        <h4 className="text-[11px] font-bold uppercase tracking-tight text-slate-800 dark:text-white">{data.title}</h4>
+                                    </div>
+                                    <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">{data.description}</p>
+                                </div>
+                            )}
+                        </div>
+                    );
+                } catch (e) {
+                    console.error("Failed to parse widget", match[1]);
+                }
+            }
+            cleanText = cleanText.replace(regex, "");
+        };
+
+        processWidget(flashcardRegex, 'FLASHCARD');
+        processWidget(quizRegex, 'QUIZ');
+        processWidget(timelineRegex, 'TIMELINE');
+        processWidget(actionItemRegex, 'ACTION_ITEM');
+        processWidget(takeawayRegex, 'TAKEAWAY');
+
+        const htmlContent = cleanText
+            .replace(/\n/g, '<br/>')
+            .replace(/> (.*)/g, '<blockquote class="border-l-4 border-black/10 dark:border-white/10 pl-4 py-1 my-2 italic">$1</blockquote>');
+
+        return (
+            <div className="space-y-2">
+                <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+                {widgets.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
+                        {widgets}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="flex h-full overflow-hidden bg-[#f4f4f5] dark:bg-[#09090b] flex-1">
             {/* Sessions Sidebar */}
@@ -208,8 +315,9 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                             ? 'bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 text-slate-700 dark:text-neutral-300'
                                             : 'bg-[var(--theme-color)] text-black font-medium'
                                         } ${msg.role === 'model' ? 'rounded-tl-none' : 'rounded-tr-none'}`}
-                                    dangerouslySetInnerHTML={{ __html: msg.text.replace(/\n/g, '<br/>').replace(/> (.*)/g, '<blockquote class="border-l-4 border-black/10 dark:border-white/10 pl-4 py-1 my-2 italic">$1</blockquote>') }}
-                                />
+                                >
+                                    {renderMessageContent(msg.text)}
+                                </div>
                             </div>
                         </div>
                     ))}

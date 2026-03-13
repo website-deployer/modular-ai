@@ -63,12 +63,14 @@ export default async function handler(req: any, res: any) {
             ${(transcript || "").slice(0, 100000)}
             `;
 
-            if ((transcript || "").length < 30000) {
+            if ((transcript || "").length < 50000) {
                 try {
                     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
                     const response = await groq.chat.completions.create({
                         model: "llama-3.3-70b-versatile",
-                        messages: [{ role: "user", content: prompt }]
+                        messages: [{ role: "user", content: prompt }],
+                        max_tokens: 3000,
+                        temperature: 0.5
                     });
                     return res.status(200).json({ content: response.choices[0]?.message?.content || "Could not generate notes." });
                 } catch (error: any) {
@@ -79,8 +81,12 @@ export default async function handler(req: any, res: any) {
             // Gemini Fallback
             const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
             const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: prompt
+                model: "gemini-1.5-flash",
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                config: {
+                    maxOutputTokens: 4000,
+                    temperature: 0.5
+                }
             });
             return res.status(200).json({ content: response.text || "Could not generate notes." });
         }

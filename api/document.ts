@@ -17,7 +17,7 @@ export default async function handler(req: any, res: any) {
         const { base64Data, mimeType, fileName } = req.body;
 
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const modelId = "gemini-2.5-flash";
+        const modelId = "gemini-1.5-flash";
 
         const prompt = `
         Analyze the provided document and create a structured study guide.
@@ -52,6 +52,7 @@ export default async function handler(req: any, res: any) {
                 ]
             },
             config: {
+                maxOutputTokens: 4000,
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.OBJECT,

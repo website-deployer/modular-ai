@@ -187,7 +187,7 @@ export interface LiveConnectionConfig {
 export const connectToLiveAPI = async (config: LiveConnectionConfig) => {
     try {
         const ai = getGeminiClient();
-        const model = "gemini-2.5-flash-native-audio-preview-12-2025";
+        const model = "gemini-1.5-flash";
 
         const session = await ai.live.connect({
             model,
