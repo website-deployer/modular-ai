@@ -34,6 +34,8 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
 
     const handleNewSession = () => {
         setCurrentSessionId(null);
+        setQuery("");
+        if (setContextualAttachments) setContextualAttachments([]);
         setMessages([
             {
                 id: 'init',
@@ -49,6 +51,8 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
             setLoading(true);
             const data = await loadAnalysisSession(id);
             setCurrentSessionId(data.id);
+            setQuery("");
+            if (setContextualAttachments) setContextualAttachments([]);
             setMessages(data.messages.map((m: any) => ({
                 ...m,
                 timestamp: new Date(m.timestamp)
@@ -271,12 +275,6 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                             </div>
                         </div>
                     ))}
-                    {sessions.length === 0 && (
-                        <div className="p-8 text-center mt-10">
-                            <span className="material-symbols-outlined text-4xl text-slate-200 dark:text-neutral-800">history</span>
-                            <p className="text-[11px] text-slate-400 mt-2 italic">Nothing saved yet</p>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -358,9 +356,9 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                         )}
 
                         <div className="relative group shadow-2xl rounded-2xl">
-                            <div className="absolute inset-0 bg-gradient-to-r from-[var(--theme-color)]/20 to-[var(--theme-color)]/5 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-[var(--theme-color)]/20 to-[var(--theme-color)]/5 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"></div>
                             <input
-                                className="w-full bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-2xl pl-6 pr-14 py-4 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]/50 transition-all shadow-inner"
+                                className="w-full bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-2xl pl-6 pr-14 py-4 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]/50 transition-all shadow-inner relative z-10"
                                 placeholder="Search across all notes..."
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
@@ -369,7 +367,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                             <button
                                 onClick={handleSend}
                                 disabled={loading}
-                                className="absolute right-3 top-2 bottom-2 px-4 bg-[var(--theme-color)] rounded-xl text-black hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--theme-color)]/20 disabled:opacity-50"
+                                className="absolute right-3 top-2 bottom-2 px-4 bg-[var(--theme-color)] rounded-xl text-black hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--theme-color)]/20 disabled:opacity-50 z-20"
                             >
                                 <span className="material-symbols-outlined text-xl font-bold">arrow_upward</span>
                             </button>
