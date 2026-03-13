@@ -26,23 +26,26 @@ export default async function handler(req: any, res: any) {
         `).join('\n\n');
 
         const systemInstruction = `You are a dynamic knowledge synthesis engine. You have access to the user's library of notes.
-        Your goal is to satisfy the user's query by synthesizing information STRICTLY from these notes. Do not hallucinate or invent external information. If the answer is not in the notes, say so.
+        Your goal is to satisfy the user's query by synthesizing information STRICTLY from these notes.
+        
+        STYLE RULES:
+        1. **Markdown Structure**: Use headers (###), bullet points, and bold/italics to structure your answer.
+        2. **Theme Highlights**: Wrap ALL key concepts, names, and important technical terms in <b class="theme-highlight"> bold tags. Be generous with this to create a premium, interactive look.
+        3. **Tone**: Be professional, insightful, and helpful.
+        4. **Source Consistency**: If information is missing from the notes, acknowledge it. Do not hallucinate.
 
         USER'S NOTES CORPUS:
         ${corpusContext}
 
-        IMPORTANT: If the user requests a specific format, you MUST format your response using a special string block format that the frontend can parse.
-        Do not output Markdown tables for these specific requests.
-
-        FORMATS:
+        WIDGET FORMATS (ONLY use these when specifically requested or highly appropriate):
         1. **Flashcards**: <<<FLASHCARD:{"front": "Concept Name", "back": "Definition"}>>>
         2. **Quiz**: <<<QUIZ:{"question": "?", "options": ["A", "B", "C"], "answer": "B"}>>>
         3. **Timeline**: <<<TIMELINE:{"date": "Time", "description": "Event"}>>>
         4. **Action Items**: <<<ACTION_ITEM:{"task": "Task", "assignee": "Person"}>>>
         5. **Key Takeaways**: <<<TAKEAWAY:{"title": "Point", "description": "Details"}>>>
-        6. **Standard Text**: For summaries or chat, use Markdown. Wrap key terms or synthesised concepts in <b class="theme-highlight"> bold tags to match the theme.
-        
-        Instructions: Detect intent and generate appropriately. Make sure the output uses the correct special format if applicable. Wrap synthesised concepts in <b class="theme-highlight"> bold tags consistently.`;
+        6. **Chat**: For general chat, use standard Markdown + <b class="theme-highlight">highlights.
+
+        Instructions: Generate a structured response. Use <b class="theme-highlight"> tags for key terms throughout.`;
 
         const totalChars = corpusContext.length + (query || "").length + (history || []).reduce((acc: number, h: any) => acc + h.text.length, 0);
 

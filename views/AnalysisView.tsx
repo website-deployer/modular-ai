@@ -228,15 +228,28 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
         processWidget(actionItemRegex, 'ACTION_ITEM');
         processWidget(takeawayRegex, 'TAKEAWAY');
 
+        // Robust Ad-hoc Markdown Rendering
         const htmlContent = cleanText
-            .replace(/\n/g, '<br/>')
-            .replace(/> (.*)/g, '<blockquote class="border-l-4 border-black/10 dark:border-white/10 pl-4 py-1 my-2 italic">$1</blockquote>');
+            // Headers
+            .replace(/^#{3} (.*$)/gim, '<h3 class="text-lg font-bold text-slate-800 dark:text-white mt-6 mb-2">$1</h3>')
+            .replace(/^#{2} (.*$)/gim, '<h2 class="text-xl font-bold text-slate-800 dark:text-white mt-8 mb-4 border-b border-black/5 pb-2">$1</h2>')
+            .replace(/^#{1} (.*$)/gim, '<h1 class="text-2xl font-bold text-slate-900 dark:text-white mt-10 mb-6">$1</h1>')
+            // Bold
+            .replace(/\*\*(.*?)\*\*/g, '<b class="font-bold text-slate-900 dark:text-white">$1</b>')
+            // Italics
+            .replace(/\*(.*?)\*/g, '<i class="italic opacity-80">$1</i>')
+            // Blockquotes
+            .replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-[var(--theme-color)]/40 bg-black/5 dark:bg-white/5 px-4 py-2 my-4 rounded-r-lg italic text-slate-600 dark:text-neutral-400">$1</blockquote>')
+            // Lists (Simple)
+            .replace(/^\s*[-*] (.*$)/gim, '<li class="ml-4 list-disc text-slate-600 dark:text-neutral-400 mb-1">$1</li>')
+            // Paragraphs and breaks
+            .replace(/\n/g, '<br/>');
 
         return (
             <div className="space-y-2">
-                <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+                <div className="markdown-body" dangerouslySetInnerHTML={{ __html: htmlContent }} />
                 {widgets.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
+                    <div className="mt-6 pt-6 border-t border-black/5 dark:border-white/5 space-y-4">
                         {widgets}
                     </div>
                 )}
