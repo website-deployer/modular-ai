@@ -141,6 +141,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
         // Extract widgets
         const flashcardRegex = /<<<FLASHCARD:(.*?)>>>/g;
         const quizRegex = /<<<QUIZ:(.*?)>>>/g;
+        const quizSetRegex = /<<<QUIZ_SET:(.*?)>>>/g;
         const timelineRegex = /<<<TIMELINE:(.*?)>>>/g;
         const actionItemRegex = /<<<ACTION_ITEM:(.*?)>>>/g;
         const takeawayRegex = /<<<TAKEAWAY:(.*?)>>>/g;
@@ -178,6 +179,47 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                                 <span className="inline-block w-6 font-bold text-[var(--theme-color)]">{String.fromCharCode(65 + i)}.</span> {opt}
                                             </button>
                                         ))}
+                                    </div>
+                                </div>
+                            )}
+                            {type === 'QUIZ_SET' && (
+                                <div className="bg-white dark:bg-zinc-900 border border-[var(--theme-color)]/20 rounded-3xl p-8 shadow-2xl max-w-2xl mx-auto overflow-hidden relative">
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--theme-color)] to-transparent opacity-50"></div>
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div>
+                                            <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none">{data.title || "Interactive Quiz"}</h4>
+                                            <p className="text-xs text-slate-400 mt-2 font-medium uppercase tracking-widest italic opacity-60 flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-color)] animate-pulse"></span>
+                                                Assessing {data.questions.length} Concepts
+                                            </p>
+                                        </div>
+                                        <div className="w-12 h-12 rounded-2xl bg-[var(--theme-color)]/10 flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-[var(--theme-color)] text-2xl">school</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-8">
+                                        {data.questions.map((q: any, qi: number) => (
+                                            <div key={qi} className="group/q border-b border-black/5 dark:border-white/5 last:border-0 pb-8 last:pb-0">
+                                                <div className="flex gap-4 mb-4">
+                                                    <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-black/5 dark:bg-white/5 text-[10px] font-black text-slate-400 shrink-0">0{qi + 1}</span>
+                                                    <p className="text-sm font-bold text-slate-800 dark:text-white leading-relaxed">{q.question}</p>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-10">
+                                                    {q.options.map((opt: string, i: number) => (
+                                                        <button key={i} className="group/opt text-left px-4 py-3 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/2 hover:border-[var(--theme-color)]/50 hover:bg-[var(--theme-color)]/5 transition-all outline-none">
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="w-6 h-6 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center text-[10px] font-bold text-slate-400 group-hover/opt:border-[var(--theme-color)] group-hover/opt:text-[var(--theme-color)]">{String.fromCharCode(65 + i)}</span>
+                                                                <span className="text-xs text-slate-600 dark:text-neutral-400 font-medium">{opt}</span>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-10 p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-dashed border-black/10 dark:border-white/10 flex items-center justify-between">
+                                        <span className="text-[10px] text-slate-500 font-medium">Click an option to check your knowledge.</span>
+                                        <button className="bg-[var(--theme-color)] text-black px-6 py-2 rounded-xl font-black text-[11px] uppercase tracking-tighter hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-[var(--theme-color)]/20">Submit Answers</button>
                                     </div>
                                 </div>
                             )}
@@ -260,6 +302,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
 
         processWidget(flashcardRegex, 'FLASHCARD');
         processWidget(quizRegex, 'QUIZ');
+        processWidget(quizSetRegex, 'QUIZ_SET');
         processWidget(timelineRegex, 'TIMELINE');
         processWidget(actionItemRegex, 'ACTION_ITEM');
         processWidget(takeawayRegex, 'TAKEAWAY');
@@ -304,6 +347,19 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
             </div>
         );
     };
+
+    const suggestions = [
+        { label: 'Generate Quiz', icon: 'quiz', query: 'Generate a comprehensive quiz set based on my notes.' },
+        { label: 'Show Timeline', icon: 'event_repeat', query: 'Show a timeline of key events and dates mentioned in my library.' },
+        { label: 'Compare Concepts', icon: 'compare_arrows', query: 'Compare the primary concepts discussed in my recent notes.' },
+        { label: 'Key Takeaways', icon: 'lightbulb', query: 'Summarize the most important takeaways from all my notes.' }
+    ];
+
+    // Derive currentSession for rendering purposes
+    const currentSession = currentSessionId 
+        ? sessions.find(s => s.id === currentSessionId) 
+        : { id: 'new', title: 'New Session', messages: messages, updated_at: new Date().toISOString() };
+
 
     return (
         <div className="flex h-full overflow-hidden bg-[#f4f4f5] dark:bg-[#09090b] flex-1">
@@ -397,7 +453,27 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
 
                 {/* Input Area */}
                 <div className="p-6 border-t border-black/5 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-xl shrink-0">
-                    <div className="max-w-4xl mx-auto flex flex-col gap-4">
+                    <div className="max-w-4xl mx-auto flex flex-col gap-6">
+                    {/* Suggestions Row */}
+                    {messages.length <= 1 && (
+                        <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                            {suggestions.map((s, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => {
+                                        setQuery(s.query);
+                                        // Auto-trigger if clicking a suggestion
+                                        setTimeout(handleSend, 100);
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/5 hover:border-[var(--theme-color)]/50 hover:bg-[var(--theme-color)]/5 transition-all group shadow-sm active:scale-95"
+                                >
+                                    <span className="material-symbols-outlined text-slate-400 group-hover:text-[var(--theme-color)] text-lg transition-colors">{s.icon}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{s.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                         {/* Attachments */}
                         {contextualAttachments && contextualAttachments.length > 0 && (
                             <div className="flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar">
