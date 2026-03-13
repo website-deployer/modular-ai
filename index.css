@@ -1,10 +1,5 @@
 @import "tailwindcss";
-
-@theme {
-  --font-sans: "Noto Sans", sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
-  --font-body: "Noto Sans", sans-serif;
-}
+@config "./tailwind.config.js";
 
 :root {
   --theme-color: #c4f20d;
