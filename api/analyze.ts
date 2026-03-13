@@ -37,24 +37,31 @@ export default async function handler(req: any, res: any) {
         USER'S NOTES CORPUS:
         ${corpusContext}
 
-        WIDGET FORMATS (Use These EXACT structures):
-        1. **Flashcards**: <<<FLASHCARD:{"front": "...", "back": "..."}>>>
-        2. **Quiz Set**: <<<QUIZ_SET:{"title": "...", "questions": [{"question": "...", "options": ["A", "B"], "answer": "B"}]}>>>
-        3. **Timeline**: <<<TIMELINE:{"date": "...", "description": "..."}>>>
-        4. **Action Items**: <<<ACTION_ITEM:{"task": "...", "assignee": "..."}>>>
-        5. **Key Takeaways**: <<<TAKEAWAY:{"title": "...", "description": "..."}>>>
-        6. **Comparison**: <<<COMPARISON:{"title": "...", "left": {"name": "...", "points": ["..."]}, "right": {"name": "...", "points": ["..."]}}>>>
-        7. **Statistic**: <<<STAT:{"value": "...", "label": "...", "detail": "..."}>>>
+        WIDGET SYSTEM (CRITICAL - Use these EXACT delimiters):
+        When you want to show an interactive element, wrap the JSON data exactly like this:
+        ---WIDGET_START:TYPE---
+        { JSON_DATA }
+        ---WIDGET_END---
 
-        EXAMPLE OF A PERFECT QUIZ_SET:
-        <<<QUIZ_SET:{"title": "Neuroscience Basics", "questions": [{"question": "What is a neuron?", "options": ["A cell", "A bone"], "answer": "A cell"}]}>>>
+        WIDGET TYPES:
+        1. **FLASHCARD**: {"front": "...", "back": "..."}
+        2. **QUIZ_SET**: {"title": "...", "questions": [{"question": "...", "options": ["A", "B"], "answer": "B"}]}
+        3. **TIMELINE**: {"date": "...", "description": "..."}
+        4. **ACTION_ITEM**: {"task": "...", "assignee": "..."}
+        5. **TAKEAWAY**: {"title": "...", "description": "..."}
+        6. **COMPARISON**: {"title": "...", "left": {"name": "...", "points": ["..."]}, "right": {"name": "...", "points": ["..."]}}
+        7. **STAT**: {"value": "...", "label": "...", "detail": "..."}
+
+        PERFECT EXAMPLE:
+        ---WIDGET_START:QUIZ_SET---
+        {"title": "Neuroscience", "questions": [{"question": "...", "options": ["A", "B"], "answer": "A"}]}
+        ---WIDGET_END---
 
         CRITICAL RULES:
-        - NEVER omit the prefix (e.g., QUIZ_SET:).
-        - NEVER return a quiz/timeline as a Markdown list.
-        - ALWAYS start with <<< and end with >>>.
-        - If generating multiple questions, they MUST be inside a single QUIZ_SET array.
-        - Use <b class="theme-highlight"> for key terms in the "Chat" sections.`;
+        - NEVER use Markdown lists for quizzes or timelines.
+        - ALWAYS start with ---WIDGET_START:TYPE--- and end with ---WIDGET_END---.
+        - NEVER return malformed JSON.
+        - Use <b class="theme-highlight"> highlighting in standard chat sections.`;
 
         const totalChars = corpusContext.length + (query || "").length + (history || []).reduce((acc: number, h: any) => acc + h.text.length, 0);
 
