@@ -32,9 +32,9 @@ export default async function handler(req: any, res: any) {
         3. **Timeline**: <<<TIMELINE:{"date": "Time", "description": "Event"}>>>
         4. **Action Items**: <<<ACTION_ITEM:{"task": "Task", "assignee": "Person"}>>>
         5. **Key Takeaways**: <<<TAKEAWAY:{"title": "Point", "description": "Details"}>>>
-        6. **Standard Text**: For summaries or chat, use Markdown.
-
-        Instructions: Detect intent and generate appropriately. Make sure the output uses the correct special format if applicable.`;
+        6. **Standard Text**: For summaries or chat, use Markdown. Wrap key terms or synthesised concepts in <b class="theme-highlight"> bold tags to match the theme.
+        
+        Instructions: Detect intent and generate appropriately. Make sure the output uses the correct special format if applicable. Wrap synthesised concepts in <b class="theme-highlight"> bold tags consistently.`;
 
         const totalChars = corpusContext.length + (query || "").length + (history || []).reduce((acc: number, h: any) => acc + h.text.length, 0);
 

@@ -30,7 +30,7 @@ export default async function handler(req: any, res: any) {
         <h2>🔑 Key Concepts</h2>
         <ul><li><b>[Term]</b> — [Definition]</li></ul>
         <h2>📝 Detailed Notes</h2>
-        [Paragraphs with <b>bold highlights</b> on key terms. Use <h3> for sub-topics.]
+        [Paragraphs with <b class="theme-highlight">bold highlights</b> on key terms. Use <h3> for sub-topics.]
         <h2>✅ Action Items</h2>
         <ul><li>[ ] [Task]</li></ul>
         <h2>⚡ Quick Review</h2>
