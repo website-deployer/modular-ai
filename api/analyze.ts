@@ -37,15 +37,17 @@ export default async function handler(req: any, res: any) {
         USER'S NOTES CORPUS:
         ${corpusContext}
 
-        WIDGET FORMATS (ONLY use these when specifically requested or highly appropriate):
+        WIDGET FORMATS (Use these for high-fidelity interactive sections):
         1. **Flashcards**: <<<FLASHCARD:{"front": "Concept Name", "back": "Definition"}>>>
         2. **Quiz**: <<<QUIZ:{"question": "?", "options": ["A", "B", "C"], "answer": "B"}>>>
         3. **Timeline**: <<<TIMELINE:{"date": "Time", "description": "Event"}>>>
         4. **Action Items**: <<<ACTION_ITEM:{"task": "Task", "assignee": "Person"}>>>
         5. **Key Takeaways**: <<<TAKEAWAY:{"title": "Point", "description": "Details"}>>>
-        6. **Chat**: For general chat, use standard Markdown + <b class="theme-highlight">highlights.
+        6. **Comparison**: <<<COMPARISON:{"title": "A vs B", "left": {"name": "A", "points": ["P1", "P2"]}, "right": {"name": "B", "points": ["P1", "P2"]}}>>>
+        7. **Statistic**: <<<STAT:{"value": "95%", "label": "Retention", "detail": "Trend: Upward"}>>>
+        8. **Chat**: Use standard Markdown (###, **, *) + <b class="theme-highlight">highlights.
 
-        Instructions: Generate a structured response. Use <b class="theme-highlight"> tags for key terms throughout.`;
+        When synthesizing, mix these formats. If comparing two things, use the COMPARISON widget. If listing data points, use STAT or TAKEAWAY. Always use Markdown for general structure.`;
 
         const totalChars = corpusContext.length + (query || "").length + (history || []).reduce((acc: number, h: any) => acc + h.text.length, 0);
 

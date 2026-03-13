@@ -155,7 +155,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                 try {
                     const data = JSON.parse(match[1]);
                     widgets.push(
-                        <div key={`${type}-${widgets.length}`} className="my-4">
+                        <div key={`${type}-${widgets.length}`} className="my-6">
                             {type === 'FLASHCARD' && (
                                 <div className="bg-white dark:bg-zinc-900 border border-[var(--theme-color)]/30 rounded-2xl p-6 shadow-xl relative overflow-hidden group/card max-w-sm mx-auto cursor-pointer transition-transform hover:scale-[1.02]">
                                     <div className="absolute top-0 right-0 p-2 bg-[var(--theme-color)]/10 rounded-bl-xl text-[10px] font-bold text-[var(--theme-color)] uppercase tracking-tighter">Flashcard</div>
@@ -213,6 +213,42 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                     <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed">{data.description}</p>
                                 </div>
                             )}
+                            {type === 'COMPARISON' && (
+                                <div className="bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-xl max-w-2xl mx-auto">
+                                    <div className="bg-slate-50 dark:bg-white/5 px-6 py-3 border-b border-slate-200 dark:border-white/10">
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-neutral-400">{data.title || "Side-by-Side Comparison"}</h4>
+                                    </div>
+                                    <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-white/10">
+                                        <div className="p-6">
+                                            <h5 className="text-sm font-bold text-[var(--theme-color)] mb-4">{data.left.name}</h5>
+                                            <ul className="space-y-2">
+                                                {data.left.points.map((p: string, i: number) => (
+                                                    <li key={i} className="text-[11px] text-slate-600 dark:text-neutral-400 flex gap-2">
+                                                        <span className="text-[var(--theme-color)]">•</span> {p}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <div className="p-6">
+                                            <h5 className="text-sm font-bold text-sky-400 mb-4">{data.right.name}</h5>
+                                            <ul className="space-y-2">
+                                                {data.right.points.map((p: string, i: number) => (
+                                                    <li key={i} className="text-[11px] text-slate-600 dark:text-neutral-400 flex gap-2">
+                                                        <span className="text-sky-400">•</span> {p}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {type === 'STAT' && (
+                                <div className="inline-flex flex-col bg-[var(--theme-color)] text-black p-4 rounded-2xl shadow-lg shadow-[var(--theme-color)]/20 min-w-[140px]">
+                                    <span className="text-[10px] uppercase font-black tracking-widest opacity-60">{data.label}</span>
+                                    <span className="text-3xl font-black my-1">{data.value}</span>
+                                    {data.detail && <span className="text-[9px] font-bold opacity-70 tracking-tight">{data.detail}</span>}
+                                </div>
+                            )}
                         </div>
                     );
                 } catch (e) {
@@ -227,9 +263,21 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
         processWidget(timelineRegex, 'TIMELINE');
         processWidget(actionItemRegex, 'ACTION_ITEM');
         processWidget(takeawayRegex, 'TAKEAWAY');
+        processWidget(/<<<COMPARISON:(.*?)>>>/g, 'COMPARISON');
+        processWidget(/<<<STAT:(.*?)>>>/g, 'STAT');
 
         // Robust Ad-hoc Markdown Rendering
         const htmlContent = cleanText
+            // Tables (Basic support for | Col | Col | format)
+            .replace(/\|(.+)\|/gim, (match) => {
+                const cols = match.split('|').filter(c => c.trim().length > 0);
+                if (cols.length === 0) return match;
+                return `<div class="overflow-x-auto my-4"><table class="min-w-full divide-y divide-black/5 dark:divide-white/10 border border-black/5 dark:border-white/10 rounded-xl overflow-hidden text-[11px]">
+                    <tr class="bg-black/5 dark:bg-white/5">
+                        ${cols.map(c => `<th class="px-3 py-2 text-left font-bold text-slate-800 dark:text-white uppercase tracking-tighter">${c.trim()}</th>`).join('')}
+                    </tr>
+                </table></div>`;
+            })
             // Headers
             .replace(/^#{3} (.*$)/gim, '<h3 class="text-lg font-bold text-slate-800 dark:text-white mt-6 mb-2">$1</h3>')
             .replace(/^#{2} (.*$)/gim, '<h2 class="text-xl font-bold text-slate-800 dark:text-white mt-8 mb-4 border-b border-black/5 pb-2">$1</h2>')
