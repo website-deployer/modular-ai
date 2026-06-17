@@ -58,6 +58,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ context, contextualAttach
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // Reset chat when context (note) changes
@@ -101,7 +102,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ context, contextualAttach
 
         setLoading(true);
 
-        const responseText = await generateChatResponse(
+        const result = await generateChatResponse(
             messages.map(m => ({ role: m.role, text: m.text })),
             context,
             finalInput
@@ -111,9 +112,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ context, contextualAttach
         setMessages(prev => [...prev, {
             id: (Date.now() + 1).toString(),
             role: 'model',
-            text: responseText,
+            text: result.content,
+            provider: result.provider,
             timestamp: new Date()
         }]);
+    };
+
+    const handleCopy = (text: string, id: string) => {
+        navigator.clipboard?.writeText(text).then(() => {
+            setCopiedId(id);
+            setTimeout(() => setCopiedId(null), 1500);
+        }).catch(() => {});
     };
 
     return (
@@ -139,6 +148,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ context, contextualAttach
                                     } ${msg.role === 'model' ? 'rounded-bl-none' : 'rounded-br-none'}`}
                                 dangerouslySetInnerHTML={msg.role === 'model' ? renderMarkdown(msg.text) : { __html: msg.text }}
                             />
+                            {msg.role === 'model' && msg.id !== 'init' && (
+                                <div className="flex items-center gap-2 px-1">
+                                    {msg.provider && (
+                                        <span className="text-[9px] text-neutral-400 dark:text-neutral-500 flex items-center gap-0.5">
+                                            <span className="material-symbols-outlined text-[10px]">bolt</span>
+                                            via {msg.provider}
+                                        </span>
+                                    )}
+                                    <button
+                                        onClick={() => handleCopy(msg.text, msg.id)}
+                                        className="text-[9px] text-neutral-400 dark:text-neutral-500 hover:text-[var(--theme-color)] flex items-center gap-0.5 transition-colors"
+                                        title="Copy"
+                                    >
+                                        <span className="material-symbols-outlined text-[11px]">{copiedId === msg.id ? 'check' : 'content_copy'}</span>
+                                        {copiedId === msg.id ? 'Copied' : 'Copy'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}

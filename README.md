@@ -55,6 +55,14 @@ notice. The quota resets automatically; paid plans/billing are not wired up.
 > **Authentication → Sign In / Providers → Anonymous** and turn it on. Until then the
 > app runs on the anonymous fallback.
 
+### Bot protection (hCaptcha)
+
+If you enable **CAPTCHA protection** on Supabase Auth (to stop bots farming anonymous
+users to dodge limits), set `HCAPTCHA_SITE_KEY` in `.env.local` to your hCaptcha site
+key and configure the matching secret in Supabase. The client solves an **invisible**
+hCaptcha only when Supabase reports a captcha is required, then retries sign-in with the
+token. The default site key is hCaptcha's always-pass test key.
+
 ## Run Locally
 
 **Prerequisites:** Node.js 18+

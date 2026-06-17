@@ -90,6 +90,8 @@ export default defineConfig(({ mode }) => {
             // Browser Supabase client (anonymous auth). Publishable key only — safe to expose.
             'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL),
             'process.env.SUPABASE_ANON_KEY': JSON.stringify(env.SUPABASE_ANON_KEY),
+            // hCaptcha site key (public).
+            'process.env.HCAPTCHA_SITE_KEY': JSON.stringify(env.HCAPTCHA_SITE_KEY),
         },
         resolve: {
             alias: {

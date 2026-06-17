@@ -48,6 +48,20 @@ const LibraryView: React.FC<LibraryViewProps> = ({ notes = [], onOpenNote, onNav
         return result;
     }, [notes, filterView, searchQuery]);
 
+    const handleNewNote = () => {
+        const note: Note = {
+            id: Date.now().toString(),
+            title: 'Untitled Note',
+            date: new Date().toLocaleDateString(),
+            content: '',
+            transcript: '',
+            type: 'TEXT',
+            tags: ['Note'],
+            lastAccessed: new Date().toISOString(),
+        };
+        onImport(note);
+    };
+
     const getPageTitle = () => {
         if (filterView === View.BOOKMARKS) return "Bookmarked Notes";
         if (filterView === View.HISTORY) return "Recently Viewed";
@@ -288,6 +302,16 @@ const LibraryView: React.FC<LibraryViewProps> = ({ notes = [], onOpenNote, onNav
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
+                    {!filterView && (
+                        <button
+                            onClick={handleNewNote}
+                            title="Create a blank note"
+                            className="h-10 px-3 sm:px-4 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10 text-slate-700 dark:text-white text-sm font-bold flex items-center gap-2 transition-colors"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">note_add</span>
+                            <span className="hidden md:inline">New Note</span>
+                        </button>
+                    )}
                     <button
                         onClick={() => onNavigate(View.RECORDER)}
                         className="h-10 px-4 rounded-full bg-[var(--theme-color)] text-black text-sm font-bold flex items-center gap-2 hover:brightness-110 transition-colors shadow-lg shadow-[var(--theme-color)]/20"

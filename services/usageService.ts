@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'react';
 import { supabase } from './supabaseClient';
+import { getCaptchaToken, hcaptchaConfigured } from './hcaptcha';
 
 // Client-side mirror of the server's free-usage limit + Supabase anonymous auth.
 //
@@ -21,10 +22,18 @@ const ensureAuth = async (): Promise<void> => {
     try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-            const { error } = await supabase.auth.signInAnonymously();
+            // Try a plain anonymous sign-in first; only solve a captcha if Supabase
+            // demands one (CAPTCHA protection enabled), then retry with the token.
+            let { error } = await supabase.auth.signInAnonymously();
+            if (error && /captcha/i.test(error.message) && hcaptchaConfigured()) {
+                const captchaToken = await getCaptchaToken();
+                if (captchaToken) {
+                    ({ error } = await supabase.auth.signInAnonymously({ options: { captchaToken } }));
+                }
+            }
             if (error) {
                 console.warn('[usage] Supabase anonymous auth unavailable:', error.message,
-                    '— enable it under Authentication → Providers → Anonymous. Falling back to anonymous limit.');
+                    '— enable it under Authentication → Providers → Anonymous (and set the hCaptcha secret if CAPTCHA protection is on). Falling back to anonymous limit.');
             }
         }
     } catch (e) {
