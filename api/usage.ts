@@ -12,6 +12,6 @@ export default async function handler(req: any, res: any) {
         return res.status(200).json(usage);
     } catch (error: any) {
         console.error('Usage API Error:', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).json({ error: error?.message || 'Internal Server Error' });
     }
 }
