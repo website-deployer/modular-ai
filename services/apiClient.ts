@@ -13,13 +13,11 @@ const readUsageHeaders = (res: Response) => {
     const used = res.headers.get('x-usage-used');
     const limit = res.headers.get('x-usage-limit');
     const remaining = res.headers.get('x-usage-remaining');
-    const pro = res.headers.get('x-usage-pro');
     if (used !== null && limit !== null && remaining !== null) {
         const u = parseInt(used, 10);
         const l = parseInt(limit, 10);
         const r = parseInt(remaining, 10);
-        const isPro = pro === '1';
-        setUsageState({ used: u, limit: l, remaining: r, reachedLimit: !isPro && r <= 0, isPro });
+        setUsageState({ used: u, limit: l, remaining: r, reachedLimit: r <= 0 });
     }
 };
 

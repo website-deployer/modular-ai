@@ -74,7 +74,6 @@ export default defineConfig(({ mode }) => {
         'OPENROUTER_API_KEY', 'OPENROUTER_MODEL', 'OPENROUTER_VISION_MODEL',
         'GEMINI_API_KEY', 'GEMINI_MODEL', 'GEMINI_VISION_MODEL',
         'SUPABASE_URL', 'SUPABASE_KEY', 'DAILY_FREE_LIMIT',
-        'STRIPE_SECRET_KEY', 'PRO_PRICE_CENTS', 'APP_URL',
     ]) {
         if (env[key]) process.env[key] = env[key];
     }

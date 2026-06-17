@@ -10,7 +10,7 @@ import StorageQuotaModal from './components/StorageQuotaModal';
 import UpgradeModal from './components/UpgradeModal';
 import { View, Note, AppSettings } from './types';
 import { initDB, getAllNotes, saveNote, deleteNote, getSettings, saveSettings, migrateFromLocalStorage, deleteNotesBefore, clearAllNotes } from './services/storageService';
-import { refreshUsage, confirmCheckout } from './services/usageService';
+import { refreshUsage } from './services/usageService';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.LIBRARY);
@@ -57,23 +57,8 @@ const App: React.FC = () => {
       return () => document.removeEventListener('selectionchange', handleSelectionChange);
   }, []);
 
-  // Daily usage limit: load current status and open the upgrade modal when hit.
+  // Daily usage limit: load current status and open the limit modal when hit.
   useEffect(() => {
-      // Handle return from Stripe Checkout.
-      const params = new URLSearchParams(window.location.search);
-      const checkout = params.get('checkout');
-      if (checkout === 'success') {
-          const sessionId = params.get('session_id');
-          if (sessionId) {
-              confirmCheckout(sessionId).then(ok => {
-                  if (ok) setShowUpgradeModal(true); // shows the "You're on Pro" confirmation
-              });
-          }
-          window.history.replaceState({}, '', window.location.pathname);
-      } else if (checkout === 'cancel') {
-          window.history.replaceState({}, '', window.location.pathname);
-      }
-
       refreshUsage();
       const onLimit = () => setShowUpgradeModal(true);
       window.addEventListener('usage-limit-reached', onLimit);

@@ -19,7 +19,7 @@ fails over between free models when one is rate-limited.
 - **Multi-provider failover** — every AI call rotates across providers and skips any
   that are rate-limited (HTTP 429), using only free models.
 - **Daily free-usage limit** — anonymous users get a configurable number of free AI
-  actions per day, with an upgrade paywall beyond that.
+  actions per day, with a "limit reached" notice beyond that (quota resets daily).
 
 ## AI Providers (free models only)
 
@@ -41,7 +41,8 @@ the env vars listed in [`.env.local`](.env.local).
 - Default limit: **15** free AI actions/day (`DAILY_FREE_LIMIT`).
 - Enforced server-side ([`api/_usage.ts`](api/_usage.ts)) — durably via Supabase if
   configured, otherwise best-effort in memory.
-- The client mirrors the status for the sidebar badge and triggers the upgrade modal.
+- The client mirrors the status for the sidebar badge and shows a "limit reached" notice.
+- The quota resets daily. (Paid plans/billing are not wired up yet.)
 
 > Note: without Supabase, the limit is a soft/best-effort gate (server memory + client
 > store). For production, add Supabase (below) so counts persist across requests.

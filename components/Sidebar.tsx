@@ -13,24 +13,6 @@ const UsageBadge: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
   const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
   const low = usage.remaining <= 3;
 
-  // Pro members: show a status pill instead of the free-usage meter.
-  if (usage.isPro) {
-    return (
-      <>
-        <button onClick={onUpgrade} className="lg:hidden w-full flex items-center justify-center py-2 mb-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Pro plan — unlimited">
-          <span className="material-symbols-outlined text-[var(--theme-color)]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-        </button>
-        <div className="hidden lg:flex items-center gap-2 rounded-xl border border-[var(--theme-color)]/30 bg-[var(--theme-color)]/10 p-3 mb-3">
-          <span className="material-symbols-outlined text-[var(--theme-color)] text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-          <div className="flex flex-col">
-            <span className="text-xs font-black text-slate-900 dark:text-white">Pro Plan</span>
-            <span className="text-[10px] text-neutral-500">Unlimited AI access</span>
-          </div>
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       {/* Compact bolt for collapsed sidebar */}
@@ -42,8 +24,12 @@ const UsageBadge: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
         <span className={`material-symbols-outlined ${low ? 'text-amber-500' : 'text-[var(--theme-color)]'}`}>bolt</span>
       </button>
 
-      {/* Full badge for expanded sidebar */}
-      <div className="hidden lg:block rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/5 p-3 mb-3">
+      {/* Full badge for expanded sidebar (click to see details) */}
+      <button
+        onClick={onUpgrade}
+        title="View daily usage"
+        className="hidden lg:block w-full text-left rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/5 p-3 mb-3 hover:border-[var(--theme-color)]/40 transition-colors"
+      >
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px] text-[var(--theme-color)]">bolt</span>
@@ -59,14 +45,8 @@ const UsageBadge: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
             style={{ width: `${pct}%` }}
           ></div>
         </div>
-        <button
-          onClick={onUpgrade}
-          className="mt-3 w-full h-8 rounded-lg bg-[var(--theme-color)] text-black text-[11px] font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1"
-        >
-          <span className="material-symbols-outlined text-[14px]">rocket_launch</span>
-          Upgrade
-        </button>
-      </div>
+        <span className="block mt-2 text-[10px] text-neutral-500">Resets daily</span>
+      </button>
     </>
   );
 };

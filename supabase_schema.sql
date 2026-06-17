@@ -28,18 +28,11 @@ create table if not exists analysis_sessions (
     updated_at timestamptz default now()
 );
 
--- Daily free-usage counters (the real enforcement layer for the limit system)
+-- Daily free-usage counters (the enforcement layer for the anonymous daily limit).
+-- Keyed by an anonymous browser id (text) + UTC day — no authentication required.
 create table if not exists usage_counters (
     user_id text not null,
     day     date not null,
     count   integer not null default 0,
     primary key (user_id, day)
-);
-
--- Paid (Pro) users — set after a successful Stripe checkout. Pro users bypass the daily limit.
-create table if not exists pro_users (
-    user_id            text primary key,
-    active             boolean not null default true,
-    stripe_customer_id text,
-    updated_at         timestamptz default now()
 );

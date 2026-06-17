@@ -58,7 +58,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSettings,
 
            <div className="py-4 border-b border-black/5 dark:border-white/5">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Accent Color</h3>
-            <p className="text-xs text-neutral-500 mb-3">Neon Lime by default — pick a preset or any custom color.</p>
+            <p className="text-xs text-neutral-500 mb-3">Neon Lime by default — pick any accent to theme the app.</p>
             <div className="flex gap-3 flex-wrap items-center">
                 {THEME_COLORS.map(color => (
                     <button
@@ -71,20 +71,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSettings,
                         {settings.themeColor === color.value && <span className="material-symbols-outlined text-black text-sm font-bold">check</span>}
                     </button>
                 ))}
-                {/* Custom color picker */}
-                <label
-                    className="w-10 h-10 rounded-full border-2 border-dashed border-black/20 dark:border-white/20 flex items-center justify-center cursor-pointer hover:scale-110 transition-all relative overflow-hidden"
-                    title="Custom color"
-                    style={{ background: 'conic-gradient(red, orange, yellow, lime, cyan, blue, magenta, red)' }}
-                >
-                    <span className="material-symbols-outlined text-white text-base drop-shadow mix-blend-difference">colorize</span>
-                    <input
-                        type="color"
-                        value={settings.themeColor}
-                        onChange={(e) => onUpdateSettings({ ...settings, themeColor: e.target.value })}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                </label>
             </div>
           </div>
 

@@ -1,8 +1,8 @@
 // Daily free-usage limiting.
 //
 // Each anonymous user gets a number of free AI generations per day (DAILY_FREE_LIMIT,
-// default 15). Past that they must upgrade to a paid plan. Usage is keyed by an
-// anonymous client id (sent in the `x-user-id` header) and the UTC day.
+// default 15). Usage is keyed by an anonymous client id (sent in the `x-user-id`
+// header) and the UTC day.
 //
 // Storage strategy:
 //   - If Supabase is configured, counts persist in the `usage_counters` table
@@ -15,7 +15,6 @@ import { createClient } from '@supabase/supabase-js';
 export const DAILY_LIMIT = parseInt(process.env.DAILY_FREE_LIMIT || '15', 10);
 
 const memory: Record<string, { day: string; count: number }> = {};
-const memoryPro = new Set<string>();
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -35,51 +34,14 @@ export interface UsageStatus {
     limit: number;
     remaining: number;
     reachedLimit: boolean;
-    isPro: boolean;
 }
 
-const toStatus = (used: number, isPro = false): UsageStatus => isPro
-    ? { used, limit: DAILY_LIMIT, remaining: 999999, reachedLimit: false, isPro: true }
-    : {
-        used,
-        limit: DAILY_LIMIT,
-        remaining: Math.max(0, DAILY_LIMIT - used),
-        reachedLimit: used >= DAILY_LIMIT,
-        isPro: false,
-    };
-
-/** Whether a user has an active paid (Pro) plan. */
-export const isPro = async (userId: string): Promise<boolean> => {
-    if (memoryPro.has(userId)) return true;
-    const sb = getSupabase();
-    if (!sb) return false;
-    try {
-        const { data } = await sb
-            .from('pro_users')
-            .select('active')
-            .eq('user_id', userId)
-            .maybeSingle();
-        return !!data?.active;
-    } catch {
-        return false;
-    }
-};
-
-/** Mark a user as Pro (called after a successful Stripe checkout). */
-export const setPro = async (userId: string, stripeCustomerId?: string | null): Promise<void> => {
-    // In-memory fallback so Pro works even before the Supabase table exists.
-    memoryPro.add(userId);
-    const sb = getSupabase();
-    if (!sb) return;
-    try {
-        await sb.from('pro_users').upsert(
-            { user_id: userId, active: true, stripe_customer_id: stripeCustomerId || null, updated_at: new Date().toISOString() },
-            { onConflict: 'user_id' }
-        );
-    } catch (e) {
-        console.error('setPro persist failed (using in-memory Pro):', e);
-    }
-};
+const toStatus = (used: number): UsageStatus => ({
+    used,
+    limit: DAILY_LIMIT,
+    remaining: Math.max(0, DAILY_LIMIT - used),
+    reachedLimit: used >= DAILY_LIMIT,
+});
 
 /** Resolve a stable identifier for the caller. */
 export const getUserId = (req: any): string => {
@@ -92,17 +54,6 @@ export const getUserId = (req: any): string => {
 /** Read current usage without consuming any quota. */
 export const getUsage = async (userId: string): Promise<UsageStatus> => {
     const day = today();
-    if (await isPro(userId)) {
-        const sb = getSupabase();
-        let used = 0;
-        if (sb) {
-            try {
-                const { data } = await sb.from('usage_counters').select('count').eq('user_id', userId).eq('day', day).maybeSingle();
-                used = data?.count || 0;
-            } catch { /* ignore */ }
-        }
-        return toStatus(used, true);
-    }
     const sb = getSupabase();
     if (sb) {
         try {
@@ -128,12 +79,6 @@ export const getUsage = async (userId: string): Promise<UsageStatus> => {
  */
 export const consume = async (userId: string): Promise<{ allowed: boolean; status: UsageStatus }> => {
     const day = today();
-
-    // Pro users bypass the daily limit entirely.
-    if (await isPro(userId)) {
-        return { allowed: true, status: toStatus(0, true) };
-    }
-
     const sb = getSupabase();
 
     if (sb) {
@@ -177,7 +122,6 @@ export const enforceLimit = async (req: any, res: any): Promise<UsageStatus | nu
     res.setHeader('x-usage-used', String(status.used));
     res.setHeader('x-usage-limit', String(status.limit));
     res.setHeader('x-usage-remaining', String(status.remaining));
-    res.setHeader('x-usage-pro', status.isPro ? '1' : '0');
     if (!allowed) {
         res.status(429).json({ error: 'LIMIT_REACHED', usage: status });
         return null;
