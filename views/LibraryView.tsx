@@ -3,6 +3,7 @@ import { Note, View } from '../types';
 import { generateNoteFromTranscript, processDocument, transcribeAudio } from '../services/aiService';
 import { extractPdfText } from '../services/pdfService';
 import * as mammoth from 'mammoth';
+import Skeleton from '../components/Skeleton';
 
 interface LibraryViewProps {
     notes: Note[];
@@ -268,6 +269,9 @@ const LibraryView: React.FC<LibraryViewProps> = ({ notes = [], onOpenNote, onNav
                                 </div>
                                 <h3 className="text-white font-bold text-lg font-display">Analyzing Content...</h3>
                                 <p className="text-neutral-400 text-sm mt-2">Gemini is extracting insights and generating a study guide.</p>
+                                <div className="mt-4 w-full max-w-sm mx-auto">
+                                    <Skeleton variant="card" lines={2} />
+                                </div>
                             </>
                         )}
 

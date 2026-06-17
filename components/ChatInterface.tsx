@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateChatResponse } from '../services/aiService';
 import { ChatMessage } from '../types';
+import ThinkingOrbs from './ThinkingOrbs';
 
 interface ChatInterfaceProps {
     context: string;
@@ -175,11 +176,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ context, contextualAttach
                         <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center shrink-0 border border-black/5 dark:border-white/10">
                             <span className="material-symbols-outlined text-xs text-[var(--theme-color)]">smart_toy</span>
                         </div>
-                        <div className="flex items-center gap-1 mt-1.5">
-                            <span className="w-1 h-1 bg-[var(--theme-color)] rounded-full animate-bounce"></span>
-                            <span className="w-1 h-1 bg-[var(--theme-color)] rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></span>
-                            <span className="w-1 h-1 bg-[var(--theme-color)] rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></span>
-                        </div>
+                        <ThinkingOrbs label="thinking…" />
                     </div>
                 )}
             </div>

@@ -59,3 +59,54 @@ body {
     color: var(--theme-color) !important;
     font-weight: 700;
 }
+
+/* ---- Aurora Animation System ---- */
+
+/* Aurora blob drift (boot splash — fast) */
+@keyframes aurora-drift-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(40px, -30px) scale(1.1); }
+}
+@keyframes aurora-drift-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-30px, 40px) scale(1.15); }
+}
+@keyframes aurora-drift-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(20px, -40px) scale(0.9); }
+}
+
+/* Ambient blob drift (background — slow) */
+@keyframes ambient-drift-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -20px) scale(1.08); }
+}
+@keyframes ambient-drift-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-20px, 30px) scale(1.12); }
+}
+@keyframes ambient-drift-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(15px, -25px) scale(0.92); }
+}
+
+/* Splash progress bar sweep */
+@keyframes shimmer-slide {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(320%); }
+}
+
+/* Thinking orbs bob */
+@keyframes orb-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+}
+
+/* Kill all custom animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

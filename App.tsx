@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Analytics } from "@vercel/analytics/react";
+import { AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import LibraryView from './views/LibraryView';
 import RecorderView from './views/RecorderView';
@@ -8,6 +9,8 @@ import AnalysisView from './views/AnalysisView';
 import SettingsView from './views/SettingsView';
 import StorageQuotaModal from './components/StorageQuotaModal';
 import UpgradeModal from './components/UpgradeModal';
+import BootSplash from './components/BootSplash';
+import AmbientAurora from './components/AmbientAurora';
 import { View, Note, AppSettings } from './types';
 import { initDB, getAllNotes, saveNote, deleteNote, getSettings, saveSettings, migrateFromLocalStorage, deleteNotesBefore, clearAllNotes } from './services/storageService';
 import { refreshUsage, initAuth } from './services/usageService';
@@ -294,16 +297,18 @@ const App: React.FC = () => {
     }
   };
 
-  if (!isLoaded) return null;
-
   return (
     <div 
-        className="bg-[#f4f4f5] dark:bg-[#09090b] text-slate-900 dark:text-white font-display overflow-hidden h-screen flex selection:bg-[var(--theme-color)] selection:text-black"
+        className="relative bg-[#f4f4f5] dark:bg-[#09090b] text-slate-900 dark:text-white font-display overflow-hidden h-screen flex selection:bg-[var(--theme-color)] selection:text-black"
         style={{ 
             "--theme-color": settings.themeColor, 
             "--theme-rgb": hexToRgb(settings.themeColor) 
         } as React.CSSProperties}
     >
+      <AnimatePresence>
+        {!isLoaded && <BootSplash />}
+      </AnimatePresence>
+      <AmbientAurora />
       <Sidebar currentView={currentView} onChangeView={setCurrentView} onUpgrade={() => setShowUpgradeModal(true)} />
       {renderView()}
 

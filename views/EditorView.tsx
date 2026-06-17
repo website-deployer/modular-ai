@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Note } from '../types';
 import ChatInterface from '../components/ChatInterface';
+import Skeleton from '../components/Skeleton';
 
 interface EditorViewProps {
   note: Note;
@@ -373,7 +374,10 @@ const EditorView: React.FC<EditorViewProps> = ({ note, onBack, onUpdate, onToggl
                                   </div>
                               </object>
                           ) : (
-                              <div className="text-neutral-500">Loading PDF...</div>
+                              <div className="flex flex-col gap-2.5 p-2">
+                                  <Skeleton width="40%" />
+                                  <Skeleton width="80%" />
+                              </div>
                           )
                       ) : note.sourceData.mimeType.startsWith('image/') ? (
                           <img 

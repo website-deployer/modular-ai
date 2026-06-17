@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateGlobalAnalysis, getAnalysisSessions, loadAnalysisSession, saveAnalysisSession, deleteAnalysisSession, generateTitle } from '../services/aiService';
 import { Note, ChatMessage } from '../types';
+import ThinkingOrbs from '../components/ThinkingOrbs';
 
 interface AnalysisViewProps {
     notes: Note[];
@@ -580,11 +581,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                             <div className="w-8 h-8 rounded-xl bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 flex items-center justify-center shrink-0">
                                 <span className="material-symbols-outlined text-base text-[var(--theme-color)] animate-pulse">analytics</span>
                             </div>
-                            <div className="flex items-center gap-1.5 mt-3">
-                                <span className="w-1.5 h-1.5 bg-[var(--theme-color)] rounded-full animate-bounce"></span>
-                                <span className="w-1.5 h-1.5 bg-[var(--theme-color)] rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></span>
-                                <span className="w-1.5 h-1.5 bg-[var(--theme-color)] rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></span>
-                            </div>
+                            <ThinkingOrbs label="thinking…" />
                         </div>
                     )}
                 </div>
