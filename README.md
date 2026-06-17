@@ -35,17 +35,25 @@ Calls rotate in this order; a rate-limited or failing provider is transparently 
 Provider logic lives in [`api/_providers.ts`](api/_providers.ts). Override any model via
 the env vars listed in [`.env.local`](.env.local).
 
-## Daily usage limit
+## Usage limit
 
-- Each browser gets an anonymous id; usage is counted per id per UTC day.
-- Default limit: **15** free AI actions/day (`DAILY_FREE_LIMIT`).
-- Enforced server-side ([`api/_usage.ts`](api/_usage.ts)) — durably via Supabase if
-  configured, otherwise best-effort in memory.
-- The client mirrors the status for the sidebar badge and shows a "limit reached" notice.
-- The quota resets daily. (Paid plans/billing are not wired up yet.)
+Enforced server-side in [`api/_usage.ts`](api/_usage.ts), with two layers chosen
+automatically per request:
 
-> Note: without Supabase, the limit is a soft/best-effort gate (server memory + client
-> store). For production, add Supabase (below) so counts persist across requests.
+1. **Authenticated (preferred).** The browser signs in with **Supabase anonymous
+   auth**, getting a real `auth.users` uuid. Its JWT is sent on every API call; the
+   backend verifies it and enforces the limit via the project's `increment_usage` /
+   `get_user_limits` RPCs (the `user_limits` table — monthly windows, durable in Postgres).
+2. **Anonymous fallback.** If anonymous auth is disabled or unavailable, the app
+   falls back to a simple per-browser daily counter (`usage_counters` table, or an
+   in-memory map) so nothing breaks. Default fallback limit: `DAILY_FREE_LIMIT` (15/day).
+
+The client mirrors status for the sidebar usage meter and shows a "limit reached"
+notice. The quota resets automatically; paid plans/billing are not wired up.
+
+> **To enable the authenticated path:** in the Supabase dashboard go to
+> **Authentication → Sign In / Providers → Anonymous** and turn it on. Until then the
+> app runs on the anonymous fallback.
 
 ## Run Locally
 

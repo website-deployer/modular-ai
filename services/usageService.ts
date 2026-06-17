@@ -1,13 +1,54 @@
 import { useEffect, useReducer } from 'react';
+import { supabase } from './supabaseClient';
 
-// Client-side mirror of the server's daily free-usage limit.
+// Client-side mirror of the server's free-usage limit + Supabase anonymous auth.
+//
+// On load we sign in anonymously (if enabled on the project) so the browser gets
+// a real auth.users uuid; its JWT is then sent on every API call and the backend
+// enforces limits via the user_limits RPCs. If anonymous auth is unavailable, we
+// silently fall back to the per-browser anonymous id below.
 //
 // The server (api/_usage.ts) is the authoritative enforcement layer; this store
-// holds the latest known status so the UI can render a usage badge and trigger
-// the upgrade modal instantly. Status is refreshed from response headers after
-// every AI call and from /api/usage on load.
+// holds the latest known status so the UI can render the usage badge and limit
+// notice instantly.
 
 const UID_KEY = 'modularai_uid';
+
+let authReady: Promise<void> | null = null;
+
+const ensureAuth = async (): Promise<void> => {
+    if (!supabase) return;
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            const { error } = await supabase.auth.signInAnonymously();
+            if (error) {
+                console.warn('[usage] Supabase anonymous auth unavailable:', error.message,
+                    '— enable it under Authentication → Providers → Anonymous. Falling back to anonymous limit.');
+            }
+        }
+    } catch (e) {
+        console.warn('[usage] auth init failed; using anonymous fallback', e);
+    }
+};
+
+/** Idempotently kick off anonymous sign-in. */
+export const initAuth = (): Promise<void> => {
+    if (!authReady) authReady = ensureAuth();
+    return authReady;
+};
+
+/** Current Supabase access token (JWT), or null if not signed in. */
+export const getAccessToken = async (): Promise<string | null> => {
+    if (!supabase) return null;
+    try {
+        await initAuth();
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.access_token || null;
+    } catch {
+        return null;
+    }
+};
 
 export interface UsageState {
     used: number;
@@ -51,7 +92,10 @@ export const getUserId = (): string => {
 /** Fetch the latest usage from the server. */
 export const refreshUsage = async (): Promise<void> => {
     try {
-        const res = await fetch('/api/usage', { headers: { 'x-user-id': getUserId() } });
+        const token = await getAccessToken();
+        const headers: Record<string, string> = { 'x-user-id': getUserId() };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/usage', { headers });
         if (res.ok) {
             const data = await res.json();
             setUsageState(data);

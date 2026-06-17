@@ -25,9 +25,9 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) => {
                         <div className="w-14 h-14 rounded-2xl bg-[var(--theme-color)] flex items-center justify-center mb-4 shadow-lg shadow-[var(--theme-color)]/30">
                             <span className="material-symbols-outlined text-black text-3xl">bolt</span>
                         </div>
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white font-display tracking-tight">You've hit today's free limit</h2>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white font-display tracking-tight">You've hit your free limit</h2>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2 leading-relaxed">
-                            You've used <b className="text-[var(--theme-color)]">{usage.used} of {usage.limit}</b> free AI actions today. Your quota resets tomorrow — come back then to keep generating notes and analysis.
+                            You've used <b className="text-[var(--theme-color)]">{usage.used} of {usage.limit}</b> free AI actions. Your quota resets automatically — check back soon to keep generating notes and analysis.
                         </p>
                     </div>
                 </div>
@@ -37,9 +37,9 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) => {
                     <div className="rounded-2xl border border-black/5 dark:border-white/10 p-5 bg-neutral-50 dark:bg-white/5 flex items-start gap-3">
                         <span className="material-symbols-outlined text-[var(--theme-color)] text-xl shrink-0">schedule</span>
                         <div>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white">Daily free quota</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">Free quota</p>
                             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">
-                                {usage.limit} AI actions per day. Recording, document analysis, notes and Global Analysis all draw from this pool. It refreshes every 24 hours.
+                                {usage.limit} free AI actions. Recording, document analysis, notes and Global Analysis all draw from this pool, and it refreshes automatically.
                             </p>
                         </div>
                     </div>

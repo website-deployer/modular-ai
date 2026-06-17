@@ -87,6 +87,9 @@ export default defineConfig(({ mode }) => {
         define: {
             // Gemini Live (client-side WebSocket) still reads this if a working key is set.
             'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+            // Browser Supabase client (anonymous auth). Publishable key only — safe to expose.
+            'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL),
+            'process.env.SUPABASE_ANON_KEY': JSON.stringify(env.SUPABASE_ANON_KEY),
         },
         resolve: {
             alias: {

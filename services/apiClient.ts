@@ -1,4 +1,4 @@
-import { getUserId, setUsageState, triggerUpgrade } from './usageService';
+import { getUserId, getAccessToken, setUsageState, triggerUpgrade } from './usageService';
 
 // Thrown when the caller has exhausted their daily free quota.
 export class LimitReachedError extends Error {
@@ -31,6 +31,10 @@ const readUsageHeaders = (res: Response) => {
 export const apiFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
     const headers = new Headers(options.headers || {});
     headers.set('x-user-id', getUserId());
+    // Attach the Supabase JWT when signed in, so the backend can use the
+    // authenticated user_limits RPCs. Falls back to x-user-id otherwise.
+    const token = await getAccessToken();
+    if (token) headers.set('Authorization', `Bearer ${token}`);
 
     const res = await fetch(url, { ...options, headers });
 

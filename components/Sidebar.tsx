@@ -33,7 +33,7 @@ const UsageBadge: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px] text-[var(--theme-color)]">bolt</span>
-            Daily Free
+            Free Usage
           </span>
           <span className={`text-[10px] font-black ${low ? 'text-amber-500' : 'text-slate-600 dark:text-neutral-300'}`}>
             {usage.remaining}/{usage.limit} left
@@ -45,7 +45,7 @@ const UsageBadge: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
             style={{ width: `${pct}%` }}
           ></div>
         </div>
-        <span className="block mt-2 text-[10px] text-neutral-500">Resets daily</span>
+        <span className="block mt-2 text-[10px] text-neutral-500">Resets automatically</span>
       </button>
     </>
   );

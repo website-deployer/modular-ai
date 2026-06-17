@@ -10,7 +10,7 @@ import StorageQuotaModal from './components/StorageQuotaModal';
 import UpgradeModal from './components/UpgradeModal';
 import { View, Note, AppSettings } from './types';
 import { initDB, getAllNotes, saveNote, deleteNote, getSettings, saveSettings, migrateFromLocalStorage, deleteNotesBefore, clearAllNotes } from './services/storageService';
-import { refreshUsage } from './services/usageService';
+import { refreshUsage, initAuth } from './services/usageService';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.LIBRARY);
@@ -57,9 +57,9 @@ const App: React.FC = () => {
       return () => document.removeEventListener('selectionchange', handleSelectionChange);
   }, []);
 
-  // Daily usage limit: load current status and open the limit modal when hit.
+  // Usage limit: sign in (anonymous), load current status, open modal when hit.
   useEffect(() => {
-      refreshUsage();
+      initAuth().finally(() => refreshUsage());
       const onLimit = () => setShowUpgradeModal(true);
       window.addEventListener('usage-limit-reached', onLimit);
       return () => window.removeEventListener('usage-limit-reached', onLimit);
