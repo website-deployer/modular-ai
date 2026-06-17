@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { readJsonBody } from './_http';
 
 const getSupabase = () => {
     const url = process.env.SUPABASE_URL;
@@ -24,7 +25,7 @@ export default async function handler(req: any, res: any) {
 
         // POST: Create or update a session
         if (req.method === 'POST') {
-            const { id, title, messages } = req.body;
+            const { id, title, messages } = readJsonBody(req);
 
             if (id) {
                 // Update existing session
@@ -52,7 +53,7 @@ export default async function handler(req: any, res: any) {
 
         // GET with ID (load specific session with messages)
         if (req.method === 'PUT') {
-            const { id } = req.body;
+            const { id } = readJsonBody(req);
             const { data, error } = await supabase
                 .from('analysis_sessions')
                 .select('*')
@@ -65,7 +66,7 @@ export default async function handler(req: any, res: any) {
 
         // DELETE: Remove a session
         if (req.method === 'DELETE') {
-            const { id } = req.body;
+            const { id } = readJsonBody(req);
             const { error } = await supabase
                 .from('analysis_sessions')
                 .delete()

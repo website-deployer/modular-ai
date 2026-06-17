@@ -1,5 +1,6 @@
 import { chatCompletion } from './_providers';
 import { enforceLimit } from './_usage';
+import { readJsonBody } from './_http';
 
 export const config = {
     api: {
@@ -18,7 +19,7 @@ export default async function handler(req: any, res: any) {
     if (!usage) return; // 429 already sent
 
     try {
-        const { base64Data, mimeType, fileName } = req.body;
+        const { base64Data, mimeType, fileName } = readJsonBody(req);
 
         const prompt = `
         Analyze the provided document/image and create a structured study guide.

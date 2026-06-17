@@ -1,6 +1,7 @@
 // Audio transcription via Groq Whisper (free, fast). Used by both the live
 // recorder and audio-file uploads. Transcription itself does not consume the
 // daily quota — the note generation that follows does.
+import { readJsonBody } from './_http';
 
 export const config = {
     api: {
@@ -21,7 +22,7 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-        const { base64Data, mimeType, fileName } = req.body;
+        const { base64Data, mimeType, fileName } = readJsonBody(req);
         if (!base64Data) return res.status(400).json({ error: 'No audio data provided.' });
 
         const bytes = Buffer.from(base64Data, 'base64');

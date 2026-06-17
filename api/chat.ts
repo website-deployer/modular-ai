@@ -1,5 +1,6 @@
 import { chatCompletion, ChatMessage } from './_providers';
 import { enforceLimit } from './_usage';
+import { readJsonBody } from './_http';
 
 export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') {
@@ -11,7 +12,7 @@ export default async function handler(req: any, res: any) {
     if (!usage) return; // 429 already sent
 
     try {
-        const { history, context, userMessage } = req.body;
+        const { history, context, userMessage } = readJsonBody(req);
 
         const systemInstruction = `You are a helpful teaching assistant and research aide.
 You have access to the following source material (transcript or document):

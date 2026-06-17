@@ -1,5 +1,6 @@
 import { chatCompletion } from './_providers';
 import { enforceLimit } from './_usage';
+import { readJsonBody } from './_http';
 
 export const config = {
     api: {
@@ -15,7 +16,7 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-        const { action, transcript } = req.body;
+        const { action, transcript } = readJsonBody(req);
 
         // Title generation is lightweight and does NOT consume the user's daily quota.
         if (action === 'title') {
@@ -94,6 +95,6 @@ export default async function handler(req: any, res: any) {
         return res.status(400).json({ error: 'Invalid action' });
     } catch (error: any) {
         console.error('Note API Error:', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).json({ error: error?.message || 'Internal Server Error' });
     }
 }

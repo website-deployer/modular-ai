@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { readJsonBody } from './_http';
 
 const getSupabase = () => {
     const url = process.env.SUPABASE_URL;
@@ -24,7 +25,7 @@ export default async function handler(req: any, res: any) {
 
         // POST: Create or Update a note
         if (req.method === 'POST') {
-            const note = req.body;
+            const note = readJsonBody(req);
             
             // Map camelCase (frontend) to snake_case (Supabase) if necessary, 
             // but we'll try to keep them compatible or use a mapping.
@@ -54,7 +55,7 @@ export default async function handler(req: any, res: any) {
 
         // DELETE: Remove a note
         if (req.method === 'DELETE') {
-            const { id } = req.body;
+            const { id } = readJsonBody(req);
             const { error } = await supabase
                 .from('notes')
                 .delete()

@@ -1,5 +1,6 @@
 import { chatCompletion, ChatMessage } from './_providers';
 import { enforceLimit } from './_usage';
+import { readJsonBody } from './_http';
 
 export const config = {
     api: {
@@ -18,7 +19,7 @@ export default async function handler(req: any, res: any) {
     if (!usage) return; // 429 already sent
 
     try {
-        const { notes, query, history } = req.body;
+        const { notes, query, history } = readJsonBody(req);
 
         const corpusContext = (notes || []).map((n: any) => `
         <DOCUMENT>
