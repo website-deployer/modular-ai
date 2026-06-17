@@ -1,5 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
-import Groq from "groq-sdk";
+import { chatCompletion } from './_providers';
+import { enforceLimit } from './_usage';
 
 export const config = {
     api: {
@@ -17,23 +17,30 @@ export default async function handler(req: any, res: any) {
     try {
         const { action, transcript } = req.body;
 
-        if (action === "title") {
+        // Title generation is lightweight and does NOT consume the user's daily quota.
+        if (action === 'title') {
             try {
-                const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-                const response = await groq.chat.completions.create({
-                    model: "llama-3.3-70b-versatile",
-                    messages: [{ role: "user", content: `Based on this text, generate a short, descriptive title (max 6 words). Text: ${(transcript || "").slice(0, 1000)}` }]
-                });
-                return res.status(200).json({ content: response.choices[0]?.message?.content?.trim() || "New Session" });
+                const { content } = await chatCompletion(
+                    [{
+                        role: 'user',
+                        content: `Based on this text, generate a short, descriptive title (max 6 words). Respond with ONLY the title, no quotes. Text: ${(transcript || '').slice(0, 1000)}`,
+                    }],
+                    { maxTokens: 30, temperature: 0.5 }
+                );
+                return res.status(200).json({ content: content.trim().replace(/^["']|["']$/g, '') || 'New Session' });
             } catch {
-                return res.status(200).json({ content: "New Session" });
+                return res.status(200).json({ content: 'New Session' });
             }
         }
 
-        if (action === "note") {
+        if (action === 'note') {
+            // Full note generation counts against the daily free limit.
+            const usage = await enforceLimit(req, res);
+            if (!usage) return; // 429 already sent
+
             const prompt = `
             You are an expert note-taker. Transform the following raw text/transcript into a high-quality, structured study guide.
-            
+
             YOU MUST follow this EXACT HTML template structure. Do not deviate:
 
             <blockquote><b>Executive Summary</b>: [2-3 sentence overview of the entire content]</blockquote>
@@ -66,43 +73,27 @@ export default async function handler(req: any, res: any) {
             - Wrap ALL key terms, names, definitions in <b class="theme-highlight"> bold tags. Be generous.
             - Use strictly HTML. Do NOT use Markdown. Do NOT use inline styles.
             - Keep the section headers exactly as shown (with the emoji).
-            
+
             Raw Text:
-            ${(transcript || "").slice(0, 100000)}
+            ${(transcript || '').slice(0, 100000)}
             `;
 
-            if ((transcript || "").length < 50000) {
-                try {
-                    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-                    const response = await groq.chat.completions.create({
-                        model: "llama-3.3-70b-versatile",
-                        messages: [{ role: "user", content: prompt }],
-                        max_tokens: 3000,
-                        temperature: 0.5
-                    });
-                    return res.status(200).json({ content: response.choices[0]?.message?.content || "Could not generate notes." });
-                } catch (error: any) {
-                    console.warn("Groq note generation failed, falling back to Gemini:", error.message);
-                }
+            try {
+                const { content, provider } = await chatCompletion(
+                    [{ role: 'user', content: prompt }],
+                    { maxTokens: 4000, temperature: 0.5 }
+                );
+                res.setHeader('x-ai-provider', provider);
+                return res.status(200).json({ content: content || 'Could not generate notes.', provider });
+            } catch (error: any) {
+                console.error('Note generation failed:', error);
+                return res.status(503).json({ error: error.message || 'All AI providers are currently unavailable.' });
             }
-
-            // Gemini Fallback
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-            const response = await ai.models.generateContent({
-                model: "gemini-1.5-flash",
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-                config: {
-                    maxOutputTokens: 4000,
-                    temperature: 0.5
-                }
-            });
-            return res.status(200).json({ content: response.text || "Could not generate notes." });
         }
 
         return res.status(400).json({ error: 'Invalid action' });
-
     } catch (error: any) {
-        console.error("Note API Error:", error);
+        console.error('Note API Error:', error);
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 }

@@ -1,5 +1,8 @@
 import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
 import { Note } from '../types';
+import { apiFetch, LimitReachedError } from './apiClient';
+
+const LIMIT_MESSAGE = "You've reached your daily free limit. Upgrade to a paid plan to keep generating.";
 
 // Fallback logic shifted to backend proxy (/api/).
 // We only initialize Gemini here exclusively for Live Audio WebSockets,
@@ -13,7 +16,7 @@ export const generateChatResponse = async (
     userMessage: string
 ): Promise<string> => {
     try {
-        const res = await fetch('/api/chat', {
+        const res = await apiFetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ history, context, userMessage })
@@ -23,6 +26,7 @@ export const generateChatResponse = async (
         const data = await res.json();
         return data.content;
     } catch (error) {
+        if (error instanceof LimitReachedError) return LIMIT_MESSAGE;
         console.error("Chat Error:", error);
         return "Sorry, I encountered an error connecting to the AI.";
     }
@@ -31,7 +35,7 @@ export const generateChatResponse = async (
 // 2. Process Document (PDF/Image) to create Note
 export const processDocument = async (base64Data: string, mimeType: string, fileName: string): Promise<{ title: string, content: string, transcript: string }> => {
     try {
-        const res = await fetch('/api/document', {
+        const res = await apiFetch('/api/document', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ base64Data, mimeType, fileName })
@@ -40,6 +44,9 @@ export const processDocument = async (base64Data: string, mimeType: string, file
         if (!res.ok) throw new Error("Backend document processing failure");
         return await res.json();
     } catch (error) {
+        if (error instanceof LimitReachedError) {
+            return { title: fileName, content: `<h1>Daily Limit Reached</h1><p>${LIMIT_MESSAGE}</p>`, transcript: "" };
+        }
         console.error("Document Processing Error:", error);
         return {
             title: fileName,
@@ -52,7 +59,7 @@ export const processDocument = async (base64Data: string, mimeType: string, file
 // 3. Generate Structured Notes from Transcript (Text-only fallback)
 export const generateNoteFromTranscript = async (transcript: string, title?: string): Promise<string> => {
     try {
-        const res = await fetch('/api/note', {
+        const res = await apiFetch('/api/note', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'note', transcript })
@@ -62,6 +69,7 @@ export const generateNoteFromTranscript = async (transcript: string, title?: str
         const data = await res.json();
         return data.content;
     } catch (error) {
+        if (error instanceof LimitReachedError) return `<h1>Daily Limit Reached</h1><p>${LIMIT_MESSAGE}</p>`;
         console.error("Note Generation Error:", error);
         return "<h1>Error Generating Notes</h1><p>Please try again later.</p>";
     }
@@ -70,7 +78,7 @@ export const generateNoteFromTranscript = async (transcript: string, title?: str
 // 3.5 Generate Title Only
 export const generateTitle = async (transcript: string): Promise<string> => {
     try {
-        const res = await fetch('/api/note', {
+        const res = await apiFetch('/api/note', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'title', transcript })
@@ -112,7 +120,7 @@ export const generateGlobalAnalysis = async (notes: Note[], query: string, histo
             }));
         }
 
-        const res = await fetch('/api/analyze', {
+        const res = await apiFetch('/api/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ notes: finalNotes, query, history })
@@ -126,9 +134,38 @@ export const generateGlobalAnalysis = async (notes: Note[], query: string, histo
         const data = await res.json();
         return data.content;
     } catch (error: any) {
+        if (error instanceof LimitReachedError) return LIMIT_MESSAGE;
         console.error("Analysis Error:", error);
         return error.message || "I am currently unable to access the global knowledge base.";
     }
+};
+
+// 4.2 Audio Transcription (Groq Whisper)
+export const transcribeAudio = async (base64Data: string, mimeType: string, fileName: string): Promise<string> => {
+    const res = await apiFetch('/api/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Data, mimeType, fileName })
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Transcription failed');
+    }
+    const data = await res.json();
+    return data.transcript || '';
+};
+
+// Helper: convert a Blob to a base64 string (without the data: prefix).
+export const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1] || '');
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 };
 
 // 4.5 Analysis Session Management

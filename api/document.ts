@@ -1,4 +1,5 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { chatCompletion } from './_providers';
+import { enforceLimit } from './_usage';
 
 export const config = {
     api: {
@@ -13,15 +14,15 @@ export default async function handler(req: any, res: any) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    const usage = await enforceLimit(req, res);
+    if (!usage) return; // 429 already sent
+
     try {
         const { base64Data, mimeType, fileName } = req.body;
 
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const modelId = "gemini-1.5-flash";
-
         const prompt = `
-        Analyze the provided document and create a structured study guide.
-        
+        Analyze the provided document/image and create a structured study guide.
+
         CRITICAL INSTRUCTIONS:
         1. **Title**: Generate a concise, descriptive title.
         2. **Content**: Create HTML following this EXACT template:
@@ -40,65 +41,57 @@ export default async function handler(req: any, res: any) {
         4. **Transcript**: Extract raw text for searchability.
         5. Use strictly HTML in content. No Markdown, no inline styles.
 
-        Output format (JSON): { "title": "Title Here", "content": "HTML Here", "transcript": "Raw Text Here" }
+        Respond with ONLY a JSON object, no markdown fences, in exactly this shape:
+        { "title": "Title Here", "content": "HTML Here", "transcript": "Raw Text Here" }
         `;
 
-        const response = await ai.models.generateContent({
-            model: modelId,
-            contents: {
-                parts: [
-                    { inlineData: { mimeType, data: base64Data } },
-                    { text: prompt }
-                ]
-            },
-            config: {
-                maxOutputTokens: 4000,
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        title: { type: Type.STRING },
-                        content: { type: Type.STRING },
-                        transcript: { type: Type.STRING }
-                    },
-                    required: ["title", "content", "transcript"]
-                }
-            }
-        });
+        // Multimodal message: the document/image is passed as an OpenAI-style image_url
+        // data URL. chatCompletion routes this to the first available vision provider
+        // and fails over on rate limits.
+        const { content: raw, provider } = await chatCompletion(
+            [{
+                role: 'user',
+                content: [
+                    { type: 'text', text: prompt },
+                    { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } },
+                ],
+            }],
+            { vision: true, maxTokens: 4000, temperature: 0.4 }
+        );
 
-        let text = response.text;
-        if (!text) throw new Error("No response from AI");
+        res.setHeader('x-ai-provider', provider);
 
-        // Simple JSON extractor
-        let result;
+        // Robust JSON extraction (models sometimes wrap JSON in prose or fences).
+        let result: any;
+        const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
         try {
-            const firstBrace = text.indexOf('{');
-            const lastBrace = text.lastIndexOf('}');
+            const firstBrace = cleaned.indexOf('{');
+            const lastBrace = cleaned.lastIndexOf('}');
             if (firstBrace !== -1 && lastBrace !== -1) {
-                result = JSON.parse(text.substring(firstBrace, lastBrace + 1));
+                result = JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
             } else {
-                result = JSON.parse(text);
+                result = JSON.parse(cleaned);
             }
-        } catch (e) {
-            // Very rugged fallback for invalid JSON strings escaping
-            const titleMatch = text.match(/"title"\s*:\s*"((?:\\"|[^"])*)(?:"|$)/);
-            const contentMatch = text.match(/"content"\s*:\s*"((?:\\"|[^"])*)(?:"|$)/);
-            const transcriptMatch = text.match(/"transcript"\s*:\s*"((?:\\"|[^"])*)(?:"|$)/);
+        } catch {
+            const titleMatch = cleaned.match(/"title"\s*:\s*"((?:\\"|[^"])*)(?:"|$)/);
+            const contentMatch = cleaned.match(/"content"\s*:\s*"((?:\\"|[^"])*)(?:"|$)/);
+            const transcriptMatch = cleaned.match(/"transcript"\s*:\s*"((?:\\"|[^"])*)(?:"|$)/);
             result = {
                 title: titleMatch ? titleMatch[1] : fileName,
-                content: contentMatch ? contentMatch[1] : "<p>Could not summarize content.</p>",
-                transcript: transcriptMatch ? transcriptMatch[1] : ""
+                // If we truly couldn't parse JSON, fall back to showing the raw model text.
+                content: contentMatch ? contentMatch[1] : `<p>${cleaned.slice(0, 4000) || 'Could not summarize content.'}</p>`,
+                transcript: transcriptMatch ? transcriptMatch[1] : cleaned.slice(0, 4000),
             };
         }
 
         return res.status(200).json({
             title: result.title || fileName,
-            content: result.content || "<p>Could not summarize content.</p>",
-            transcript: result.transcript || "No transcript extracted."
+            content: result.content || '<p>Could not summarize content.</p>',
+            transcript: result.transcript || 'No transcript extracted.',
+            provider,
         });
-
     } catch (error: any) {
-        console.error("Document API Error:", error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        console.error('Document API Error:', error);
+        return res.status(503).json({ error: error.message || 'All AI providers are currently unavailable.' });
     }
 }

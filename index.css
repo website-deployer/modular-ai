@@ -8,22 +8,42 @@
 
 :root {
   --theme-color: #c4f20d;
+  --theme-rgb: 196 242 13;
 }
 
-/* Global Scrollbar */
+html, body, #root { height: 100%; }
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle "modular" dotted-grid backdrop, theme-aware. Applied to app shells. */
+.neon-grid {
+  background-image: radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.dark .neon-grid {
+  background-image: radial-gradient(rgba(var(--theme-rgb), 0.05) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Global Scrollbar (theme-aware: works in light + dark) */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+    width: 7px;
+    height: 7px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.02);
+    background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(120, 120, 120, 0.25);
     border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(var(--theme-rgb), 0.5);
 }
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(120,120,120,0.3) transparent; }
 
 /* Animations */
 @keyframes blink {

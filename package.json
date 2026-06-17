@@ -12,11 +12,13 @@
   "dependencies": {
     "@google/genai": "^1.37.0",
     "@supabase/supabase-js": "^2.99.1",
+    "@vercel/analytics": "^1.5.0",
     "groq-sdk": "^0.15.0",
     "mammoth": "^1.11.0",
+    "pdfjs-dist": "^4.10.38",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@vercel/analytics": "^1.5.0"
+    "stripe": "^22.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.1",
