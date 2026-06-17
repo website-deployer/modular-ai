@@ -1,12 +1,57 @@
 import React from 'react';
 import { View } from '../types';
+import { useUsage } from '../services/usageService';
 
 interface SidebarProps {
   currentView: View;
   onChangeView: (view: View) => void;
+  onUpgrade: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView }) => {
+const UsageBadge: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => {
+  const usage = useUsage();
+  const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
+  const low = usage.remaining <= 3;
+
+  return (
+    <>
+      {/* Compact bolt for collapsed sidebar */}
+      <button
+        onClick={onUpgrade}
+        className="lg:hidden w-full flex items-center justify-center py-2 mb-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        title={`${usage.remaining} free uses left today`}
+      >
+        <span className={`material-symbols-outlined ${low ? 'text-amber-500' : 'text-[var(--theme-color)]'}`}>bolt</span>
+      </button>
+
+      {/* Full badge for expanded sidebar (click to see details) */}
+      <button
+        onClick={onUpgrade}
+        title="View daily usage"
+        className="hidden lg:block w-full text-left rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/5 p-3 mb-3 hover:border-[var(--theme-color)]/40 transition-colors"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px] text-[var(--theme-color)]">bolt</span>
+            Free Usage
+          </span>
+          <span className={`text-[10px] font-black ${low ? 'text-amber-500' : 'text-slate-600 dark:text-neutral-300'}`}>
+            {usage.remaining}/{usage.limit} left
+          </span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${low ? 'bg-amber-500' : 'bg-[var(--theme-color)]'}`}
+            style={{ width: `${pct}%` }}
+          ></div>
+        </div>
+        <span className="block mt-2 text-[10px] text-neutral-500">Resets automatically</span>
+      </button>
+    </>
+  );
+};
+
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onUpgrade }) => {
   const navItems = [
     { view: View.RECORDER, icon: 'mic', label: 'Active Record' },
     { view: View.LIBRARY, icon: 'folder_open', label: 'Library' },
@@ -57,7 +102,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView }) => {
       </nav>
 
       <div className="p-2 md:p-4 border-t border-black/5 dark:border-white/10 bg-neutral-50 dark:bg-[#121212]">
-        <button 
+        <UsageBadge onUpgrade={onUpgrade} />
+        <button
           onClick={() => onChangeView(View.SETTINGS)}
           className={`flex items-center justify-center lg:justify-start gap-3 px-3 py-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors w-full text-left ${currentView === View.SETTINGS ? 'bg-[rgba(var(--theme-rgb),0.1)] text-[var(--theme-color)] border border-[rgba(var(--theme-rgb),0.1)]' : 'text-neutral-500 dark:text-neutral-400 border border-transparent'}`}
         >

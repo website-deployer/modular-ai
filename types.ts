@@ -46,6 +46,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
+  provider?: string; // which AI provider answered (e.g. "Groq")
   relatedSlide?: number;
   relatedTimestamp?: string;
 }

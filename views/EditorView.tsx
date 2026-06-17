@@ -114,6 +114,35 @@ const EditorView: React.FC<EditorViewProps> = ({ note, onBack, onUpdate, onToggl
       editorRef.current?.focus();
   };
 
+  const handleExportPDF = () => {
+      const html = editorRef.current?.innerHTML || content;
+      const themeColor = (getComputedStyle(document.documentElement).getPropertyValue('--theme-color') || '#c4f20d').trim();
+      const win = window.open('', '_blank');
+      if (!win) {
+          alert('Please allow pop-ups to export this note as a PDF.');
+          return;
+      }
+      win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${title || 'Note'}</title>
+        <style>
+          body { font-family: Georgia, 'Times New Roman', serif; max-width: 760px; margin: 40px auto; padding: 0 24px; color: #18181b; line-height: 1.6; }
+          h1 { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 28px; letter-spacing: -0.02em; margin-bottom: 4px; }
+          h2 { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 20px; margin-top: 1.4em; }
+          h3 { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 16px; }
+          b, strong { color: ${themeColor}; filter: brightness(0.7); }
+          blockquote { border-left: 3px solid ${themeColor}; padding-left: 1em; font-style: italic; color: #555; }
+          .meta { color: #888; font-size: 12px; margin-bottom: 24px; font-family: Arial, sans-serif; }
+          img { max-width: 100%; }
+          @media print { body { margin: 0; } }
+        </style></head><body>
+        <h1>${title || 'Untitled Note'}</h1>
+        <div class="meta">${note.date}${note.duration ? ' · ' + note.duration : ''} · Modular AI Notes</div>
+        ${html}
+        </body></html>`);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 350);
+  };
+
   return (
     <main className="flex-1 flex flex-col min-w-0 relative bg-[#f4f4f5] dark:bg-[#09090b]">
       <header className="shrink-0 h-16 md:h-20 border-b border-black/5 dark:border-white/10 flex items-center justify-between px-4 md:px-6 bg-white/50 dark:bg-[#09090b]/80 backdrop-blur-md z-10">
@@ -161,7 +190,7 @@ const EditorView: React.FC<EditorViewProps> = ({ note, onBack, onUpdate, onToggl
                 <span className="material-symbols-outlined text-[20px]">arrow_back</span>
                 <span>Back</span>
             </button>
-            <button className="h-10 px-4 rounded-lg bg-[var(--theme-color)] hover:brightness-110 text-black text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-[var(--theme-color)]/10">
+            <button onClick={handleExportPDF} className="h-10 px-4 rounded-lg bg-[var(--theme-color)] hover:brightness-110 text-black text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-[var(--theme-color)]/10">
                 <span className="material-symbols-outlined text-[20px]">download</span>
                 <span className="hidden sm:inline">Export PDF</span>
             </button>

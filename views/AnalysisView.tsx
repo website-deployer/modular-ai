@@ -198,12 +198,13 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
         }
     }, [messages, loading]);
 
-    const handleSend = async () => {
-        if (!query.trim() && contextualAttachments.length === 0) return;
+    const handleSend = async (overrideQuery?: string) => {
+        const baseQuery = typeof overrideQuery === 'string' ? overrideQuery : query;
+        if (!baseQuery.trim() && contextualAttachments.length === 0) return;
 
-        let finalQuery = query;
-        let originalQuery = query;
-        
+        let finalQuery = baseQuery;
+        let originalQuery = baseQuery;
+
         if (contextualAttachments.length > 0) {
             const attachmentsBlock = contextualAttachments.map(text => `> ${text}`).join('\n>\n');
             finalQuery = `${attachmentsBlock}\n\n${query}`.trim();
@@ -597,11 +598,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                             {suggestions.map((s, i) => (
                                 <button
                                     key={i}
-                                    onClick={() => {
-                                        setQuery(s.query);
-                                        // Auto-trigger if clicking a suggestion
-                                        setTimeout(handleSend, 100);
-                                    }}
+                                    onClick={() => handleSend(s.query)}
                                     className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/5 hover:border-[var(--theme-color)]/50 hover:bg-[var(--theme-color)]/5 transition-all group shadow-sm active:scale-95"
                                 >
                                     <span className="material-symbols-outlined text-slate-400 group-hover:text-[var(--theme-color)] text-lg transition-colors">{s.icon}</span>
@@ -639,7 +636,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ notes, contextualAttachment
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                             />
                             <button
-                                onClick={handleSend}
+                                onClick={() => handleSend()}
                                 disabled={loading}
                                 className="absolute right-3 top-2 bottom-2 px-4 bg-[var(--theme-color)] rounded-xl text-black hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--theme-color)]/20 disabled:opacity-50 z-20"
                             >

@@ -7,13 +7,16 @@ import EditorView from './views/EditorView';
 import AnalysisView from './views/AnalysisView';
 import SettingsView from './views/SettingsView';
 import StorageQuotaModal from './components/StorageQuotaModal';
+import UpgradeModal from './components/UpgradeModal';
 import { View, Note, AppSettings } from './types';
 import { initDB, getAllNotes, saveNote, deleteNote, getSettings, saveSettings, migrateFromLocalStorage, deleteNotesBefore, clearAllNotes } from './services/storageService';
+import { refreshUsage, initAuth } from './services/usageService';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.LIBRARY);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   // Settings State
   const [settings, setSettingsState] = useState<AppSettings>({
@@ -52,6 +55,14 @@ const App: React.FC = () => {
 
       document.addEventListener('selectionchange', handleSelectionChange);
       return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, []);
+
+  // Usage limit: sign in (anonymous), load current status, open modal when hit.
+  useEffect(() => {
+      initAuth().finally(() => refreshUsage());
+      const onLimit = () => setShowUpgradeModal(true);
+      window.addEventListener('usage-limit-reached', onLimit);
+      return () => window.removeEventListener('usage-limit-reached', onLimit);
   }, []);
 
   const handleAddToChat = () => {
@@ -293,8 +304,10 @@ const App: React.FC = () => {
             "--theme-rgb": hexToRgb(settings.themeColor) 
         } as React.CSSProperties}
     >
-      <Sidebar currentView={currentView} onChangeView={setCurrentView} />
+      <Sidebar currentView={currentView} onChangeView={setCurrentView} onUpgrade={() => setShowUpgradeModal(true)} />
       {renderView()}
+
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       
       <StorageQuotaModal 
         isOpen={showQuotaModal} 

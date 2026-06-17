@@ -8,11 +8,13 @@ interface SettingsViewProps {
 }
 
 const THEME_COLORS = [
-    { name: 'Lime', value: '#c4f20d' },
-    { name: 'Blue', value: '#3b82f6' },
-    { name: 'Purple', value: '#a855f7' },
-    { name: 'Orange', value: '#f97316' },
-    { name: 'Pink', value: '#ec4899' },
+    { name: 'Neon Lime', value: '#c4f20d' },
+    { name: 'Cyber Cyan', value: '#22d3ee' },
+    { name: 'Electric Blue', value: '#3b82f6' },
+    { name: 'Ultraviolet', value: '#a855f7' },
+    { name: 'Hot Magenta', value: '#ec4899' },
+    { name: 'Solar Orange', value: '#f97316' },
+    { name: 'Acid Green', value: '#39ff14' },
     { name: 'Teal', value: '#14b8a6' },
 ];
 
@@ -55,14 +57,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onUpdateSettings,
           </div>
 
            <div className="py-4 border-b border-black/5 dark:border-white/5">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Accent Color</h3>
-            <div className="flex gap-3">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Accent Color</h3>
+            <p className="text-xs text-neutral-500 mb-3">Neon Lime by default — pick any accent to theme the app.</p>
+            <div className="flex gap-3 flex-wrap items-center">
                 {THEME_COLORS.map(color => (
                     <button
                         key={color.value}
                         onClick={() => onUpdateSettings({ ...settings, themeColor: color.value })}
-                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${settings.themeColor === color.value ? 'border-white dark:border-white ring-2 ring-[var(--theme-color)]' : 'border-transparent'}`}
-                        style={{ backgroundColor: color.value }}
+                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 ${settings.themeColor === color.value ? 'border-white dark:border-white ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#18181b]' : 'border-transparent'}`}
+                        style={{ backgroundColor: color.value, boxShadow: settings.themeColor === color.value ? `0 0 16px ${color.value}` : undefined }}
                         title={color.name}
                     >
                         {settings.themeColor === color.value && <span className="material-symbols-outlined text-black text-sm font-bold">check</span>}

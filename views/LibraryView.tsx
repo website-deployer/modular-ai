@@ -1,6 +1,7 @@
 import React, { useRef, useMemo, useState } from 'react';
 import { Note, View } from '../types';
-import { generateNoteFromTranscript, processDocument } from '../services/aiService';
+import { generateNoteFromTranscript, processDocument, transcribeAudio } from '../services/aiService';
+import { extractPdfText } from '../services/pdfService';
 import * as mammoth from 'mammoth';
 
 interface LibraryViewProps {
@@ -46,6 +47,20 @@ const LibraryView: React.FC<LibraryViewProps> = ({ notes = [], onOpenNote, onNav
 
         return result;
     }, [notes, filterView, searchQuery]);
+
+    const handleNewNote = () => {
+        const note: Note = {
+            id: Date.now().toString(),
+            title: 'Untitled Note',
+            date: new Date().toLocaleDateString(),
+            content: '',
+            transcript: '',
+            type: 'TEXT',
+            tags: ['Note'],
+            lastAccessed: new Date().toISOString(),
+        };
+        onImport(note);
+    };
 
     const getPageTitle = () => {
         if (filterView === View.BOOKMARKS) return "Bookmarked Notes";
@@ -103,16 +118,24 @@ const LibraryView: React.FC<LibraryViewProps> = ({ notes = [], onOpenNote, onNav
             let newNote: Note | null = null;
 
             if (isPdf) {
+                // Extract text in-browser (vision models can't read PDFs directly),
+                // then structure it into notes via the text pipeline.
                 const base64Data = await readFileAsBase64(file);
+                const extractedText = await extractPdfText(file);
                 setUploadStatus('analyzing');
-                const processingResult = await processDocument(base64Data, 'application/pdf', file.name);
+
+                if (!extractedText || extractedText.length < 20) {
+                    throw new Error('This PDF appears to be scanned or image-only. Try exporting a page as an image and uploading that instead.');
+                }
+
+                const content = await generateNoteFromTranscript(extractedText.substring(0, 100000), file.name);
 
                 newNote = {
                     id: Date.now().toString(),
-                    title: processingResult.title,
+                    title: file.name.replace(/\.pdf$/i, ''),
                     date: new Date().toLocaleDateString(),
-                    content: processingResult.content,
-                    transcript: processingResult.transcript,
+                    content,
+                    transcript: extractedText,
                     type: 'PDF',
                     tags: ['Imported', 'PDF'],
                     sourceData: {
@@ -139,16 +162,23 @@ const LibraryView: React.FC<LibraryViewProps> = ({ notes = [], onOpenNote, onNav
                     }
                 };
             } else if (isAudio) {
+                // Transcribe with Whisper, then structure the transcript into notes.
                 const base64Data = await readFileAsBase64(file);
                 setUploadStatus('analyzing');
-                const processingResult = await processDocument(base64Data, file.type, file.name);
+                const transcript = await transcribeAudio(base64Data, file.type, file.name);
+
+                if (!transcript || transcript.trim().length < 5) {
+                    throw new Error('Could not detect any speech in this audio file.');
+                }
+
+                const content = await generateNoteFromTranscript(transcript.substring(0, 100000), file.name);
 
                 newNote = {
                     id: Date.now().toString(),
-                    title: processingResult.title,
+                    title: file.name.replace(/\.[^.]+$/, ''),
                     date: new Date().toLocaleDateString(),
-                    content: processingResult.content,
-                    transcript: processingResult.transcript,
+                    content,
+                    transcript,
                     type: 'AUDIO',
                     tags: ['Imported', 'Audio'],
                     sourceData: {
@@ -212,7 +242,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ notes = [], onOpenNote, onNav
     };
 
     return (
-        <main className="flex-1 flex flex-col min-w-0 relative overflow-hidden bg-[#f4f4f5] dark:bg-[#09090b]">
+        <main className="flex-1 flex flex-col min-w-0 relative overflow-hidden bg-[#f4f4f5] dark:bg-[#09090b] neon-grid">
             {uploadStatus !== 'idle' && uploadStatus !== 'error' && (
                 <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
                     <div className="bg-[#18181b] p-8 rounded-2xl border border-[var(--theme-color)]/30 flex flex-col items-center shadow-2xl max-w-sm w-full text-center">
@@ -272,6 +302,16 @@ const LibraryView: React.FC<LibraryViewProps> = ({ notes = [], onOpenNote, onNav
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
+                    {!filterView && (
+                        <button
+                            onClick={handleNewNote}
+                            title="Create a blank note"
+                            className="h-10 px-3 sm:px-4 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10 text-slate-700 dark:text-white text-sm font-bold flex items-center gap-2 transition-colors"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">note_add</span>
+                            <span className="hidden md:inline">New Note</span>
+                        </button>
+                    )}
                     <button
                         onClick={() => onNavigate(View.RECORDER)}
                         className="h-10 px-4 rounded-full bg-[var(--theme-color)] text-black text-sm font-bold flex items-center gap-2 hover:brightness-110 transition-colors shadow-lg shadow-[var(--theme-color)]/20"
